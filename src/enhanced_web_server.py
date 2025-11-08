@@ -37,6 +37,12 @@ def analytics():
     return render_template('analytics.html')
 
 
+@app.route('/annotate')
+def annotate():
+    """Render interactive annotation interface"""
+    return render_template('annotate.html')
+
+
 @app.route('/api/status')
 def get_status():
     """Get system status"""
@@ -203,6 +209,133 @@ def get_recordings():
 
     videos.sort(key=lambda x: x['created'], reverse=True)
     return jsonify(videos)
+
+
+@app.route('/api/annotations/add', methods=['POST'])
+def add_annotation():
+    """Add user annotation for interactive learning"""
+    if not hasattr(camera_system, 'interactive_learning'):
+        return jsonify({'success': False, 'message': 'Interactive learning not enabled'}), 400
+
+    data = request.json
+    bbox = data.get('bbox')  # [x1, y1, x2, y2]
+    class_name = data.get('class_name')
+    description = data.get('description', '')
+
+    if not bbox or not class_name:
+        return jsonify({'success': False, 'message': 'Missing bbox or class_name'}), 400
+
+    # Get current frame
+    frame = camera_system.get_display_frame()
+    if frame is None:
+        return jsonify({'success': False, 'message': 'No frame available'}), 400
+
+    try:
+        # Add annotation
+        anno_id = camera_system.interactive_learning.add_annotation(
+            frame=frame,
+            bbox=tuple(map(int, bbox)),
+            class_name=class_name,
+            description=description
+        )
+
+        return jsonify({
+            'success': True,
+            'annotation_id': anno_id,
+            'message': 'Annotation added successfully'
+        })
+    except Exception as e:
+        logger.error(f"Failed to add annotation: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/annotations/stats')
+def get_annotation_stats():
+    """Get annotation statistics"""
+    if not hasattr(camera_system, 'interactive_learning'):
+        return jsonify({'total_annotations': 0, 'pending_annotations': 0})
+
+    stats = camera_system.interactive_learning.get_statistics()
+    return jsonify(stats)
+
+
+@app.route('/api/annotations/recent')
+def get_recent_annotations():
+    """Get recent annotations"""
+    if not hasattr(camera_system, 'interactive_learning'):
+        return jsonify([])
+
+    limit = request.args.get('limit', 20, type=int)
+    annotations = camera_system.interactive_learning.get_recent_annotations(limit)
+    return jsonify(annotations)
+
+
+@app.route('/api/annotations/<annotation_id>', methods=['DELETE'])
+def delete_annotation(annotation_id):
+    """Delete an annotation"""
+    if not hasattr(camera_system, 'interactive_learning'):
+        return jsonify({'success': False, 'message': 'Interactive learning not enabled'}), 400
+
+    success = camera_system.interactive_learning.delete_annotation(annotation_id)
+    return jsonify({'success': success})
+
+
+@app.route('/api/annotations/train', methods=['POST'])
+def trigger_training():
+    """Trigger model training with user annotations"""
+    if not hasattr(camera_system, 'interactive_learning'):
+        return jsonify({'success': False, 'message': 'Interactive learning not enabled'}), 400
+
+    data = request.json or {}
+    epochs = data.get('epochs', 10)
+    batch_size = data.get('batch_size', 16)
+
+    try:
+        result = camera_system.interactive_learning.trigger_training(
+            epochs=epochs,
+            batch_size=batch_size
+        )
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Training failed: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/annotations/text', methods=['POST'])
+def add_text_annotation():
+    """Add annotation from text description"""
+    if not hasattr(camera_system, 'interactive_learning'):
+        return jsonify({'success': False, 'message': 'Interactive learning not enabled'}), 400
+
+    data = request.json
+    description = data.get('description')
+    bbox = data.get('bbox')  # Optional
+
+    if not description:
+        return jsonify({'success': False, 'message': 'Description required'}), 400
+
+    frame = camera_system.get_display_frame()
+    if frame is None:
+        return jsonify({'success': False, 'message': 'No frame available'}), 400
+
+    try:
+        if bbox:
+            bbox = tuple(map(int, bbox))
+
+        anno_id = camera_system.interactive_learning.add_text_description(
+            text_description=description,
+            frame=frame,
+            bbox=bbox
+        )
+
+        return jsonify({
+            'success': True,
+            'annotation_id': anno_id,
+            'message': 'Text annotation added successfully'
+        })
+    except Exception as e:
+        logger.error(f"Failed to add text annotation: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 def generate_frames():

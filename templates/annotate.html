@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Learning - AI Camera</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .nav a {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav a:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #annotationCanvas {
+            display: block;
+            width: 100%;
+            cursor: crosshair;
+        }
+
+        .drawing-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-primary {
+            background: #667eea;
+        }
+
+        .btn-success {
+            background: #4CAF50;
+        }
+
+        .btn-danger {
+            background: #f44336;
+        }
+
+        .btn-warning {
+            background: #FF9800;
+        }
+
+        .btn-info {
+            background: #2196F3;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            background: #f0f0f0;
+            border: 2px solid transparent;
+            cursor: pointer;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .mode-btn:hover {
+            border-color: #667eea;
+        }
+
+        .annotation-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .annotation-item {
+            background: #f9f9f9;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .annotation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .annotation-class {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .annotation-time {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .annotation-description {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .annotation-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .annotation-actions button {
+            padding: 5px 10px;
+            font-size: 0.85em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .training-section {
+            background: #f0f8ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .suggestions {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .suggestion-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Interactive Learning</h1>
+            <p class="subtitle">Train the AI by drawing boxes and adding descriptions</p>
+        </header>
+
+        <div class="nav">
+            <a href="/">Live Feed</a>
+            <a href="/analytics">Analytics</a>
+            <a href="/annotate">Annotate</a>
+        </div>
+
+        <div class="main-grid">
+            <!-- Left: Annotation Canvas -->
+            <div class="card">
+                <h2>📹 Annotate Live Feed</h2>
+
+                <div class="mode-selector">
+                    <div class="mode-btn active" id="modeBox" onclick="setMode('box')">
+                        <strong>📦 Draw Box</strong><br>
+                        <small>Click and drag to draw</small>
+                    </div>
+                    <div class="mode-btn" id="modeText" onclick="setMode('text')">
+                        <strong>✍️ Text Description</strong><br>
+                        <small>Describe what you see</small>
+                    </div>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="annotationCanvas"></canvas>
+                    <div class="drawing-info" id="drawingInfo">
+                        Click and drag to draw a bounding box
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Object Class</label>
+                    <select id="classSelect">
+                        <option value="person">Person</option>
+                        <option value="vehicle">Vehicle</option>
+                        <option value="car">Car</option>
+                        <option value="truck">Truck</option>
+                        <option value="pet">Pet/Animal</option>
+                        <option value="package">Package</option>
+                        <option value="custom">Custom (type below)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="customClassGroup" style="display: none;">
+                    <label>Custom Class Name</label>
+                    <input type="text" id="customClass" placeholder="e.g., my_dog, red_car">
+                </div>
+
+                <div class="form-group">
+                    <label>Description (optional but helps AI learn better!)</label>
+                    <textarea id="description" placeholder="e.g., 'red car with white stripe', 'my dog Max', 'person wearing blue shirt'"></textarea>
+                </div>
+
+                <div class="controls">
+                    <button class="btn-success" onclick="saveAnnotation()">💾 Save Annotation</button>
+                    <button class="btn-danger" onclick="clearCanvas()">🗑️ Clear</button>
+                    <button class="btn-primary" onclick="captureFrame()">📸 Capture New Frame</button>
+                    <button class="btn-info" onclick="undoBox()">↩️ Undo Last Box</button>
+                </div>
+            </div>
+
+            <!-- Right: Annotations & Training -->
+            <div>
+                <div class="card">
+                    <h2>📊 Learning Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statAnnotations">0</div>
+                            <div class="stat-label">Annotations</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statClasses">0</div>
+                            <div class="stat-label">Custom Classes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statPending">0</div>
+                            <div class="stat-label">Ready to Train</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statSessions">0</div>
+                            <div class="stat-label">Training Sessions</div>
+                        </div>
+                    </div>
+
+                    <div class="training-section">
+                        <h3 style="margin-bottom: 10px;">🎓 Model Training</h3>
+                        <p style="margin-bottom: 15px; color: #666;">
+                            <span id="trainingReady">Need at least 10 annotations to train</span>
+                        </p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="trainingProgress" style="width: 0%">0%</div>
+                        </div>
+                        <button class="btn-success" id="trainBtn" onclick="startTraining()" disabled style="width: 100%; margin-top: 10px;">
+                            🚀 Train Custom Model
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h2>📝 Recent Annotations</h2>
+                    <div class="annotation-list" id="annotationList">
+                        <p style="text-align: center; color: #666; padding: 20px;">
+                            No annotations yet. Start drawing boxes!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h2>💡 AI Suggestions</h2>
+                    <div id="suggestions">
+                        <p style="color: #666;">AI will suggest what to annotate based on uncertain detections</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const canvas = document.getElementById('annotationCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentMode = 'box';
+        let isDrawing = false;
+        let startX, startY;
+        let currentBox = null;
+        let drawnBoxes = [];
+        let currentFrame = null;
+
+        // Initialize canvas
+        function initCanvas() {
+            canvas.width = 1280;
+            canvas.height = 720;
+            updateFrame();
+        }
+
+        // Update frame from video feed
+        function updateFrame() {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = '/video_feed?' + new Date().getTime();
+
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                currentFrame = img;
+
+                // Redraw boxes
+                drawnBoxes.forEach(box => {
+                    drawBox(box.x1, box.y1, box.x2, box.y2, box.color || '#00ff00');
+                });
+            };
+        }
+
+        // Set annotation mode
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('mode' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.add('active');
+
+            if (mode === 'box') {
+                document.getElementById('drawingInfo').textContent = 'Click and drag to draw a bounding box';
+            } else {
+                document.getElementById('drawingInfo').textContent = 'Click on object then add description';
+            }
+        }
+
+        // Canvas drawing
+        canvas.addEventListener('mousedown', (e) => {
+            if (currentMode !== 'box') return;
+
+            const rect = canvas.getBoundingClientRect();
+            startX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            startY = (e.clientY - rect.top) * (canvas.height / rect.height);
+            isDrawing = true;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing || currentMode !== 'box') return;
+
+            const rect = canvas.getBoundingClientRect();
+            const currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const currentY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            // Redraw frame
+            if (currentFrame) {
+                ctx.drawImage(currentFrame, 0, 0, canvas.width, canvas.height);
+            }
+
+            // Redraw existing boxes
+            drawnBoxes.forEach(box => {
+                drawBox(box.x1, box.y1, box.x2, box.y2, box.color || '#00ff00');
+            });
+
+            // Draw current box
+            drawBox(startX, startY, currentX, currentY, '#00ff00');
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (!isDrawing || currentMode !== 'box') return;
+
+            const rect = canvas.getBoundingClientRect();
+            const endX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const endY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            isDrawing = false;
+
+            // Add box to list
+            currentBox = {
+                x1: Math.min(startX, endX),
+                y1: Math.min(startY, endY),
+                x2: Math.max(startX, endX),
+                y2: Math.max(startY, endY),
+                color: '#00ff00'
+            };
+
+            drawnBoxes.push(currentBox);
+        });
+
+        function drawBox(x1, y1, x2, y2, color) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        }
+
+        function clearCanvas() {
+            drawnBoxes = [];
+            currentBox = null;
+            updateFrame();
+        }
+
+        function undoBox() {
+            drawnBoxes.pop();
+            updateFrame();
+        }
+
+        function captureFrame() {
+            updateFrame();
+            drawnBoxes = [];
+        }
+
+        // Save annotation
+        function saveAnnotation() {
+            if (!currentBox && drawnBoxes.length === 0) {
+                alert('Please draw a bounding box first!');
+                return;
+            }
+
+            const classSelect = document.getElementById('classSelect');
+            let className = classSelect.value;
+
+            if (className === 'custom') {
+                className = document.getElementById('customClass').value;
+                if (!className) {
+                    alert('Please enter a custom class name!');
+                    return;
+                }
+            }
+
+            const description = document.getElementById('description').value;
+            const box = currentBox || drawnBoxes[drawnBoxes.length - 1];
+
+            // Send to backend
+            fetch('/api/annotations/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    bbox: [box.x1, box.y1, box.x2, box.y2],
+                    class_name: className,
+                    description: description,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Annotation saved! AI is learning...');
+                    clearCanvas();
+                    document.getElementById('description').value = '';
+                    updateStats();
+                    loadAnnotations();
+                } else {
+                    alert('❌ Failed to save: ' + data.message);
+                }
+            });
+        }
+
+        // Update statistics
+        function updateStats() {
+            fetch('/api/annotations/stats')
+                .then(r => r.json())
+                .then(stats => {
+                    document.getElementById('statAnnotations').textContent = stats.total_annotations || 0;
+                    document.getElementById('statClasses').textContent = stats.total_classes || 0;
+                    document.getElementById('statPending').textContent = stats.pending_annotations || 0;
+                    document.getElementById('statSessions').textContent = stats.training_sessions || 0;
+
+                    // Update training progress
+                    const progress = Math.min(100, (stats.pending_annotations / 10) * 100);
+                    document.getElementById('trainingProgress').style.width = progress + '%';
+                    document.getElementById('trainingProgress').textContent = Math.round(progress) + '%';
+
+                    // Enable train button if ready
+                    const trainBtn = document.getElementById('trainBtn');
+                    if (stats.ready_for_training) {
+                        trainBtn.disabled = false;
+                        document.getElementById('trainingReady').textContent =
+                            `Ready to train with ${stats.pending_annotations} annotations!`;
+                    } else {
+                        trainBtn.disabled = true;
+                        document.getElementById('trainingReady').textContent =
+                            `Need ${10 - (stats.pending_annotations || 0)} more annotations to train`;
+                    }
+                });
+        }
+
+        // Load recent annotations
+        function loadAnnotations() {
+            fetch('/api/annotations/recent')
+                .then(r => r.json())
+                .then(annotations => {
+                    const list = document.getElementById('annotationList');
+
+                    if (annotations.length === 0) {
+                        list.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No annotations yet</p>';
+                        return;
+                    }
+
+                    list.innerHTML = annotations.map(anno => `
+                        <div class="annotation-item">
+                            <div class="annotation-header">
+                                <span class="annotation-class">${anno.class_name}</span>
+                                <span class="annotation-time">${new Date(anno.timestamp).toLocaleString()}</span>
+                            </div>
+                            ${anno.description ? `<div class="annotation-description">"${anno.description}"</div>` : ''}
+                            <div class="annotation-actions">
+                                <button class="btn-danger" onclick="deleteAnnotation('${anno.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        // Delete annotation
+        function deleteAnnotation(id) {
+            if (!confirm('Delete this annotation?')) return;
+
+            fetch(`/api/annotations/${id}`, {method: 'DELETE'})
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        updateStats();
+                        loadAnnotations();
+                    }
+                });
+        }
+
+        // Start training
+        function startTraining() {
+            if (!confirm('Start training the model? This may take several minutes.')) return;
+
+            const trainBtn = document.getElementById('trainBtn');
+            trainBtn.disabled = true;
+            trainBtn.textContent = '⏳ Training...';
+
+            fetch('/api/annotations/train', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    epochs: 10,
+                    batch_size: 16
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                trainBtn.textContent = '🚀 Train Custom Model';
+
+                if (data.success) {
+                    alert('✅ Training completed! Model updated.');
+                    updateStats();
+                } else {
+                    alert('❌ Training failed: ' + data.message);
+                    trainBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                trainBtn.textContent = '🚀 Train Custom Model';
+                trainBtn.disabled = false;
+                alert('❌ Training failed: ' + err);
+            });
+        }
+
+        // Show custom class input when selected
+        document.getElementById('classSelect').addEventListener('change', (e) => {
+            const customGroup = document.getElementById('customClassGroup');
+            customGroup.style.display = e.target.value === 'custom' ? 'block' : 'none';
+        });
+
+        // Initialize
+        initCanvas();
+        updateStats();
+        loadAnnotations();
+
+        // Refresh frame periodically
+        setInterval(updateFrame, 1000);
+        setInterval(updateStats, 5000);
+        setInterval(loadAnnotations, 10000);
+    </script>
+</body>
+</html>

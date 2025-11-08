@@ -43,6 +43,12 @@ ai_features:
     pattern_learning_interval: 7200  # seconds (2 hours)
     behavior_update_interval: 1800  # seconds (30 minutes)
 
+  # Interactive Learning (Draw boxes & text descriptions)
+  interactive_learning:
+    enabled: true
+    min_annotations_for_training: 10
+    auto_train: false  # Automatically train when enough annotations collected
+
 ml_model:
   type: "yolov8n"  # Options: yolov8n, yolov8s, yolov8m, yolov8l, yolov8x
   confidence_threshold: 0.5

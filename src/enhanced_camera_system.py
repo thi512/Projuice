@@ -28,6 +28,7 @@ from .database import DatabaseManager
 from .continuous_learning import ContinuousLearningSystem
 from .reolink_integration import ReolinkIntegration
 from .home_assistant_mqtt import HomeAssistantMQTT
+from .interactive_learning import InteractiveLearningManager
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ class EnhancedCameraSystem:
         self.learning_system = None
         self.reolink = None
         self.home_assistant = None
+        self.interactive_learning = None
 
         self.is_running = False
         self.is_recording = False
@@ -153,6 +155,11 @@ class EnhancedCameraSystem:
         # Home Assistant integration
         if self.config.get('home_assistant.enabled', False):
             self._setup_home_assistant()
+
+        # Interactive Learning
+        if self.config.get('ai_features.interactive_learning.enabled', True):
+            self.interactive_learning = InteractiveLearningManager()
+            logger.info("Interactive learning initialized")
 
         logger.info("Enhanced camera system initialization complete")
 

@@ -8,10 +8,12 @@ A powerful, **self-learning** AI-powered home surveillance system with advanced 
 
 ### 🎓 Self-Learning Capabilities
 - **Face Recognition with Auto-Learning** - Automatically learns and recognizes people who appear frequently
+- **Interactive Training Interface** - Draw boxes and add text descriptions to train custom objects instantly!
 - **Behavioral Pattern Analysis** - Learns normal activity patterns and detects unusual behavior
 - **Continuous Learning** - Never stops learning new patterns, always improving
 - **Anomaly Detection** - Identifies unusual activities based on learned patterns
 - **Person-Specific Profiling** - Learns when each person typically appears and alerts on unusual times
+- **Custom Object Training** - Fine-tune YOLO with your own annotations via simple web interface
 
 ### 📊 Advanced Analytics
 - **Vehicle Speed Estimation** - Measures vehicle speeds in km/h with calibration
