@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Analytics Dashboard - Home Camera System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .nav a {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav a:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #2a5298;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #2a5298;
+            padding-bottom: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .stat-box {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .learning-status {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .learning-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .learning-item:last-child {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .badge-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #FF9800;
+            color: white;
+        }
+
+        .badge-info {
+            background: #2196F3;
+            color: white;
+        }
+
+        .badge-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .anomaly-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .anomaly-item {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .anomaly-time {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .person-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .person-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f9f9f9;
+            margin-bottom: 8px;
+            border-radius: 8px;
+        }
+
+        .person-name {
+            font-weight: bold;
+            color: #2a5298;
+        }
+
+        .person-stats {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .color-chip {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+            border: 2px solid #ddd;
+        }
+
+        .pattern-insight {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .pattern-insight strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 AI Analytics Dashboard</h1>
+            <p class="subtitle">Intelligent Pattern Learning & Behavioral Analysis</p>
+        </header>
+
+        <div class="nav">
+            <a href="/">Live Feed</a>
+            <a href="/analytics" class="active">Analytics</a>
+            <a href="/settings">Settings</a>
+        </div>
+
+        <!-- Learning Status Section -->
+        <div class="card full-width">
+            <h2>🎓 Continuous Learning Status</h2>
+            <div class="learning-status">
+                <div class="learning-item">
+                    <span><strong>Learning System:</strong></span>
+                    <span class="badge badge-success pulse" id="learningStatus">Active</span>
+                </div>
+                <div class="learning-item">
+                    <span>Known People:</span>
+                    <span id="knownPeople">0</span>
+                </div>
+                <div class="learning-item">
+                    <span>Events Analyzed:</span>
+                    <span id="eventsAnalyzed">0</span>
+                </div>
+                <div class="learning-item">
+                    <span>Last Pattern Learning:</span>
+                    <span id="lastPatternLearn">Never</span>
+                </div>
+                <div class="learning-item">
+                    <span>Next Learning Task:</span>
+                    <span id="nextTask" style="font-style: italic; color: #666;">Loading...</span>
+                </div>
+            </div>
+
+            <div class="pattern-insight" id="latestInsight">
+                <strong>💡 Latest Insight:</strong>
+                <span id="insightText">System is learning your patterns...</span>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Hourly Activity Chart -->
+            <div class="card">
+                <h2>📊 Activity by Hour</h2>
+                <div class="chart-container">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Daily Activity Chart -->
+            <div class="card">
+                <h2>📅 Activity by Day</h2>
+                <div class="chart-container">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Vehicle Speed Chart -->
+            <div class="card">
+                <h2>🚗 Vehicle Speed Distribution</h2>
+                <div class="chart-container">
+                    <canvas id="speedChart"></canvas>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-item">
+                        <div class="stat-value" id="avgSpeed">0</div>
+                        <div class="stat-label">Average km/h</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="maxSpeed">0</div>
+                        <div class="stat-label">Max km/h</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Color Distribution -->
+            <div class="card">
+                <h2>🎨 Vehicle Colors</h2>
+                <div class="chart-container">
+                    <canvas id="colorChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Known People -->
+            <div class="card">
+                <h2>👥 Recognized People</h2>
+                <div class="person-list" id="peopleList">
+                    <p style="text-align: center; color: #666; padding: 20px;">
+                        No people recognized yet. The system will learn as people appear.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Anomalies -->
+            <div class="card">
+                <h2>⚠️ Recent Anomalies</h2>
+                <div class="anomaly-list" id="anomalyList">
+                    <p style="text-align: center; color: #666; padding: 20px;">
+                        No anomalies detected. System learning normal behavior.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detection Timeline -->
+        <div class="card full-width">
+            <h2>📈 Detection Timeline (Last 24 Hours)</h2>
+            <div class="chart-container" style="height: 250px;">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Pattern Summary -->
+        <div class="card full-width">
+            <h2>🔍 Learned Patterns & Insights</h2>
+            <div id="patternsSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                <!-- Patterns will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Socket.IO
+        const socket = io();
+
+        // Chart configurations
+        const chartConfig = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            }
+        };
+
+        // Initialize charts
+        let hourlyChart, dailyChart, speedChart, colorChart, timelineChart;
+
+        // Hourly Activity Chart
+        const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+        hourlyChart = new Chart(hourlyCtx, {
+            type: 'bar',
+            data: {
+                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                datasets: [{
+                    label: 'Activity Count',
+                    data: Array(24).fill(0),
+                    backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: chartConfig
+        });
+
+        // Daily Activity Chart
+        const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+        dailyChart = new Chart(dailyCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Activity Count',
+                    data: Array(7).fill(0),
+                    backgroundColor: 'rgba(118, 75, 162, 0.7)',
+                    borderColor: 'rgba(118, 75, 162, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: chartConfig
+        });
+
+        // Vehicle Speed Chart
+        const speedCtx = document.getElementById('speedChart').getContext('2d');
+        speedChart = new Chart(speedCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Speed (km/h)',
+                    data: [],
+                    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                    borderColor: 'rgba(76, 175, 80, 1)',
+                    borderWidth: 2,
+                    tension: 0.4
+                }]
+            },
+            options: chartConfig
+        });
+
+        // Vehicle Color Chart
+        const colorCtx = document.getElementById('colorChart').getContext('2d');
+        colorChart = new Chart(colorCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: []
+                }]
+            },
+            options: chartConfig
+        });
+
+        // Timeline Chart
+        const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+        timelineChart = new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'People',
+                        data: [],
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Vehicles',
+                        data: [],
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: chartConfig
+        });
+
+        // Update functions
+        function updateAnalytics() {
+            // Fetch analytics data
+            fetch('/api/analytics/comprehensive')
+                .then(r => r.json())
+                .then(data => {
+                    updateLearningStatus(data.learning_status);
+                    updateHourlyChart(data.hourly_activity);
+                    updateDailyChart(data.daily_activity);
+                    updateVehicleStats(data.vehicle_stats);
+                    updateColorChart(data.color_distribution);
+                    updatePeopleList(data.known_people);
+                    updateAnomalies(data.anomalies);
+                    updatePatterns(data.patterns);
+                });
+        }
+
+        function updateLearningStatus(status) {
+            if (status) {
+                document.getElementById('knownPeople').textContent = status.known_people || 0;
+                document.getElementById('eventsAnalyzed').textContent = status.total_events || 0;
+                document.getElementById('lastPatternLearn').textContent =
+                    status.last_pattern_learn ? new Date(status.last_pattern_learn).toLocaleString() : 'Never';
+                document.getElementById('nextTask').textContent = status.next_task || 'Monitoring...';
+
+                // Update insight
+                if (status.latest_insight) {
+                    document.getElementById('insightText').textContent = status.latest_insight;
+                }
+            }
+        }
+
+        function updateHourlyChart(data) {
+            if (data) {
+                const values = Array(24).fill(0);
+                Object.keys(data).forEach(hour => {
+                    values[parseInt(hour)] = data[hour];
+                });
+                hourlyChart.data.datasets[0].data = values;
+                hourlyChart.update();
+            }
+        }
+
+        function updateDailyChart(data) {
+            if (data) {
+                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                const values = days.map(day => data[day] || 0);
+                dailyChart.data.datasets[0].data = values;
+                dailyChart.update();
+            }
+        }
+
+        function updateVehicleStats(stats) {
+            if (stats) {
+                document.getElementById('avgSpeed').textContent = (stats.average_speed || 0).toFixed(1);
+                document.getElementById('maxSpeed').textContent = (stats.max_speed || 0).toFixed(1);
+            }
+        }
+
+        function updateColorChart(colors) {
+            if (colors && Object.keys(colors).length > 0) {
+                const labels = Object.keys(colors);
+                const values = Object.values(colors);
+
+                // Generate colors for chart
+                const chartColors = labels.map(color => {
+                    const colorMap = {
+                        'red': '#FF6384',
+                        'blue': '#36A2EB',
+                        'black': '#333333',
+                        'white': '#FFFFFF',
+                        'silver': '#C0C0C0',
+                        'gray': '#808080',
+                        'green': '#4CAF50'
+                    };
+                    return colorMap[color.toLowerCase()] || '#' + Math.floor(Math.random()*16777215).toString(16);
+                });
+
+                colorChart.data.labels = labels;
+                colorChart.data.datasets[0].data = values;
+                colorChart.data.datasets[0].backgroundColor = chartColors;
+                colorChart.update();
+            }
+        }
+
+        function updatePeopleList(people) {
+            const list = document.getElementById('peopleList');
+            if (people && people.length > 0) {
+                list.innerHTML = people.map(person => `
+                    <div class="person-item">
+                        <div>
+                            <div class="person-name">${person.name}</div>
+                            <div class="person-stats">
+                                First seen: ${new Date(person.first_seen).toLocaleDateString()}
+                                • Last seen: ${new Date(person.last_seen).toLocaleString()}
+                            </div>
+                        </div>
+                        <span class="badge badge-info">${person.num_encodings} samples</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function updateAnomalies(anomalies) {
+            const list = document.getElementById('anomalyList');
+            if (anomalies && anomalies.length > 0) {
+                list.innerHTML = anomalies.map(anomaly => `
+                    <div class="anomaly-item">
+                        <div class="anomaly-time">${new Date(anomaly.timestamp).toLocaleString()}</div>
+                        <strong>${anomaly.type}</strong>: ${anomaly.description}
+                        <span class="badge badge-warning">Severity: ${(anomaly.severity * 100).toFixed(0)}%</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function updatePatterns(patterns) {
+            const container = document.getElementById('patternsSummary');
+            if (patterns && patterns.length > 0) {
+                container.innerHTML = patterns.map(pattern => `
+                    <div class="pattern-insight">
+                        <strong>${pattern.title}</strong>
+                        <span>${pattern.description}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Initialize and update periodically
+        updateAnalytics();
+        setInterval(updateAnalytics, 5000);  // Update every 5 seconds
+    </script>
+</body>
+</html>

@@ -5,6 +5,44 @@ camera:
     height: 720
   fps: 30
 
+# Advanced AI Features
+ai_features:
+  # Face Recognition with Learning
+  face_recognition:
+    enabled: true
+    tolerance: 0.6  # Lower = stricter matching
+    auto_learn_threshold: 5  # Auto-learn faces appearing this many times
+    storage_dir: "data/faces"
+
+  # Behavioral Analysis and Pattern Learning
+  behavioral_analysis:
+    enabled: true
+    learn_normal_patterns: true
+    anomaly_detection: true
+    min_events_for_learning: 100  # Minimum events before learning patterns
+
+  # Advanced Analytics
+  advanced_analytics:
+    enabled: true
+    # Vehicle speed estimation
+    speed_estimation:
+      enabled: true
+      pixels_per_meter: 50  # Calibration: pixels per real-world meter
+    # Color detection
+    color_detection:
+      enabled: true
+      track_vehicle_colors: true
+    # Time-based pattern analysis
+    time_analysis:
+      enabled: true
+
+  # Continuous Learning
+  continuous_learning:
+    enabled: true
+    face_learning_interval: 3600  # seconds (1 hour)
+    pattern_learning_interval: 7200  # seconds (2 hours)
+    behavior_update_interval: 1800  # seconds (30 minutes)
+
 ml_model:
   type: "yolov8n"  # Options: yolov8n, yolov8s, yolov8m, yolov8l, yolov8x
   confidence_threshold: 0.5
@@ -14,7 +52,7 @@ ml_model:
 detection:
   enable_object_detection: true
   enable_motion_detection: true
-  enable_face_detection: false
+  enable_face_detection: true  # Enhanced with AI face recognition
   motion_threshold: 25
   motion_min_area: 500
 
@@ -23,9 +61,72 @@ detection:
     - person
     - car
     - truck
+    - bus
+    - motorcycle
+    - bicycle
     - dog
     - cat
     - bird
+
+# Reolink Integration
+reolink:
+  enabled: false  # Set to true to enable Reolink integration
+  # NVR Configuration
+  nvr:
+    enabled: false
+    ip: "192.168.1.100"
+    username: "admin"
+    password: "your_password"
+    port: 554
+
+  # Standalone Cameras
+  cameras:
+    # Front camera example
+    - name: "front_camera"
+      enabled: false
+      ip: "192.168.1.101"
+      username: "admin"
+      password: "your_password"
+      stream_type: "sub"  # main or sub
+      use_camera_ai: true  # Use camera's built-in AI detections
+
+    # Back camera example
+    - name: "back_camera"
+      enabled: false
+      ip: "192.168.1.102"
+      username: "admin"
+      password: "your_password"
+      stream_type: "sub"
+      use_camera_ai: true
+
+# Home Assistant Integration
+home_assistant:
+  enabled: false  # Set to true to enable Home Assistant MQTT
+  mqtt:
+    broker: "192.168.1.100"  # Your Home Assistant IP
+    port: 1883
+    username: ""  # Leave empty if no authentication
+    password: ""
+    device_name: "AI Camera System"
+
+  # Auto-publish sensors
+  auto_discovery: true
+
+  # What to publish
+  publish:
+    person_detection: true
+    vehicle_detection: true
+    motion_detection: true
+    anomaly_detection: true
+    speed_data: true
+    activity_level: true
+    statistics: true
+
+# Database
+database:
+  enabled: true
+  url: "sqlite:///data/camera_system.db"
+  cleanup_days: 90  # Delete data older than this
 
 recording:
   save_recordings: true
@@ -33,6 +134,10 @@ recording:
   max_recording_duration: 300  # seconds
   save_detections: true
   video_codec: "mp4v"
+  # Auto-record on events
+  auto_record_on_person: false
+  auto_record_on_vehicle: false
+  auto_record_on_anomaly: true
 
 alerts:
   enable_alerts: true
@@ -41,12 +146,17 @@ alerts:
     - motion
     - person_detected
     - vehicle_detected
+    - anomaly_detected
+    - unusual_time_activity
 
 web_interface:
   port: 5000
   host: "0.0.0.0"
   enable_stream: true
   stream_quality: 80
+  # Advanced dashboard
+  enable_analytics_dashboard: true
+  enable_graphs: true
 
 performance:
   process_every_n_frames: 1

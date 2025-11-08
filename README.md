@@ -1,13 +1,38 @@
 # 🏠 Home AI and ML Camera System
 
-A powerful, AI-powered home surveillance system with real-time object detection, motion tracking, and intelligent alerts using state-of-the-art machine learning models.
+A powerful, **self-learning** AI-powered home surveillance system with advanced pattern recognition, behavioral analysis, and continuous learning capabilities. Goes far beyond basic motion detection to truly understand your environment.
 
-## ✨ Features
+## 🧠 **NEW: Advanced AI Features**
 
-### 🎯 Core Capabilities
+> **The system that learns and gets smarter over time!**
+
+### 🎓 Self-Learning Capabilities
+- **Face Recognition with Auto-Learning** - Automatically learns and recognizes people who appear frequently
+- **Behavioral Pattern Analysis** - Learns normal activity patterns and detects unusual behavior
+- **Continuous Learning** - Never stops learning new patterns, always improving
+- **Anomaly Detection** - Identifies unusual activities based on learned patterns
+- **Person-Specific Profiling** - Learns when each person typically appears and alerts on unusual times
+
+### 📊 Advanced Analytics
+- **Vehicle Speed Estimation** - Measures vehicle speeds in km/h with calibration
+- **Color Detection & Tracking** - Identifies and tracks vehicle colors over time
+- **Time-Based Pattern Recognition** - Discovers peak hours, quiet times, and correlations
+- **Comprehensive Dashboard** - Beautiful graphs, charts, and real-time insights
+- **Historical Database** - Stores all data for long-term trend analysis
+
+### 🏡 Smart Home Integration
+- **Reolink NVR/Camera Support** - Native integration with your Reolink cameras
+- **Home Assistant MQTT** - Auto-discovered sensors and automation triggers
+- **Real-Time Notifications** - Push alerts for anomalies and events
+
+See **[AI_FEATURES.md](AI_FEATURES.md)** for complete documentation of all AI capabilities!
+
+## ✨ Core Features
+
+### 🎯 Detection Capabilities
 - **Real-time Object Detection** - Powered by YOLOv8 for accurate and fast object recognition
 - **Motion Detection** - Advanced background subtraction for motion tracking
-- **Face Detection** - Optional face detection using Haar Cascades
+- **Advanced Face Recognition** - Deep learning-based face recognition with continuous learning
 - **Video Recording** - Automatic recording with event triggers
 - **Snapshot Management** - Capture and save important moments
 - **Event Logging** - Comprehensive event tracking and analysis
