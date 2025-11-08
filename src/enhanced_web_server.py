@@ -9,6 +9,8 @@ import json
 from datetime import datetime
 import os
 
+from .chatbot_query_engine import ChatbotQueryEngine, ChatbotConversationManager
+
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
@@ -17,12 +19,20 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Global reference to enhanced camera system
 camera_system = None
+chatbot_engine = None
+conversation_manager = None
 
 
 def init_enhanced_web_server(cam_system):
     """Initialize enhanced web server with camera system reference"""
-    global camera_system
+    global camera_system, chatbot_engine, conversation_manager
     camera_system = cam_system
+
+    # Initialize chatbot components
+    if hasattr(cam_system, 'db') and cam_system.db:
+        chatbot_engine = ChatbotQueryEngine(cam_system.db, cam_system.config)
+        conversation_manager = ChatbotConversationManager()
+        logger.info("Chatbot query engine initialized")
 
 
 @app.route('/')
@@ -41,6 +51,12 @@ def analytics():
 def annotate():
     """Render interactive annotation interface"""
     return render_template('annotate.html')
+
+
+@app.route('/chat')
+def chat():
+    """Render chatbot interface"""
+    return render_template('chat.html')
 
 
 @app.route('/api/status')
@@ -336,6 +352,59 @@ def add_text_annotation():
     except Exception as e:
         logger.error(f"Failed to add text annotation: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/chat/query', methods=['POST'])
+def chat_query():
+    """Process chatbot query"""
+    if not chatbot_engine:
+        return jsonify({'success': False, 'message': 'Chatbot not initialized'}), 400
+
+    data = request.json
+    query = data.get('query')
+    session_id = data.get('session_id', 'default')
+
+    if not query:
+        return jsonify({'success': False, 'message': 'Query required'}), 400
+
+    try:
+        # Process query
+        result = chatbot_engine.process_query(query)
+
+        # Save to conversation history
+        if conversation_manager:
+            conversation_manager.add_message(session_id, 'user', query)
+            conversation_manager.add_message(
+                session_id,
+                'assistant',
+                result['response'],
+                metadata={'intent': result['intent'], 'result_count': len(result['results'])}
+            )
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Chat query failed: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/chat/history/<session_id>')
+def get_chat_history(session_id):
+    """Get conversation history for session"""
+    if not conversation_manager:
+        return jsonify([])
+
+    history = conversation_manager.get_conversation(session_id)
+    return jsonify(history)
+
+
+@app.route('/api/chat/clear/<session_id>', methods=['POST'])
+def clear_chat_history(session_id):
+    """Clear conversation history"""
+    if conversation_manager:
+        conversation_manager.clear_conversation(session_id)
+
+    return jsonify({'success': True})
 
 
 def generate_frames():

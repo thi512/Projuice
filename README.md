@@ -9,6 +9,7 @@ A powerful, **self-learning** AI-powered home surveillance system with advanced 
 ### 🎓 Self-Learning Capabilities
 - **Face Recognition with Auto-Learning** - Automatically learns and recognizes people who appear frequently
 - **Interactive Training Interface** - Draw boxes and add text descriptions to train custom objects instantly!
+- **AI Chatbot Query System** - Ask questions in natural language: "Show me when someone came today"
 - **Behavioral Pattern Analysis** - Learns normal activity patterns and detects unusual behavior
 - **Continuous Learning** - Never stops learning new patterns, always improving
 - **Anomaly Detection** - Identifies unusual activities based on learned patterns
@@ -41,6 +42,9 @@ See **[AI_FEATURES.md](AI_FEATURES.md)** for complete documentation of all AI ca
 
 ### 🌐 Web Interface
 - **Live Video Streaming** - Real-time video feed in your browser
+- **AI Chatbot** - Ask questions about your footage in natural language
+- **Interactive Learning** - Train custom objects by drawing boxes
+- **Advanced Analytics Dashboard** - Beautiful graphs and insights
 - **Remote Control** - Start/stop recording, take snapshots remotely
 - **System Monitoring** - View statistics, status, and performance metrics
 - **Recording History** - Browse and manage saved recordings and snapshots
@@ -91,6 +95,12 @@ python main.py
 ```
 
 Then open your browser to: **http://localhost:5000**
+
+**Web Interface Pages:**
+- **http://localhost:5000** - Live video feed and controls
+- **http://localhost:5000/analytics** - Advanced analytics dashboard
+- **http://localhost:5000/annotate** - Interactive training interface
+- **http://localhost:5000/chat** - AI chatbot for searching footage
 
 #### Headless Mode (No Display)
 ```bash
@@ -289,6 +299,17 @@ To adjust logging level, modify `main.py`:
 logging.basicConfig(level=logging.DEBUG)  # More verbose
 logging.basicConfig(level=logging.WARNING)  # Less verbose
 ```
+
+## 📚 Documentation
+
+Comprehensive guides for all features:
+
+- **[README.md](README.md)** - This file - System overview and quick start
+- **[AI_FEATURES.md](AI_FEATURES.md)** - Complete AI capabilities documentation
+- **[INTERACTIVE_LEARNING.md](INTERACTIVE_LEARNING.md)** - Guide to training custom objects
+- **[CHATBOT_GUIDE.md](CHATBOT_GUIDE.md)** - Natural language query system guide
+- **[YOLOE_GUIDE.md](YOLOE_GUIDE.md)** - YOLO-E efficiency guide
+- **[INSTALL.md](INSTALL.md)** - Detailed installation instructions
 
 ## 🔒 Security Considerations
 
