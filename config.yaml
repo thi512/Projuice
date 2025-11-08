@@ -1,0 +1,54 @@
+camera:
+  index: 0
+  resolution:
+    width: 1280
+    height: 720
+  fps: 30
+
+ml_model:
+  type: "yolov8n"  # Options: yolov8n, yolov8s, yolov8m, yolov8l, yolov8x
+  confidence_threshold: 0.5
+  nms_threshold: 0.4
+  device: "cpu"  # Options: cpu, cuda, mps
+
+detection:
+  enable_object_detection: true
+  enable_motion_detection: true
+  enable_face_detection: false
+  motion_threshold: 25
+  motion_min_area: 500
+
+  # Classes to detect (COCO dataset classes)
+  target_classes:
+    - person
+    - car
+    - truck
+    - dog
+    - cat
+    - bird
+
+recording:
+  save_recordings: true
+  recordings_path: "./recordings"
+  max_recording_duration: 300  # seconds
+  save_detections: true
+  video_codec: "mp4v"
+
+alerts:
+  enable_alerts: true
+  alert_cooldown: 60  # seconds
+  alert_types:
+    - motion
+    - person_detected
+    - vehicle_detected
+
+web_interface:
+  port: 5000
+  host: "0.0.0.0"
+  enable_stream: true
+  stream_quality: 80
+
+performance:
+  process_every_n_frames: 1
+  max_frame_queue_size: 10
+  use_threading: true

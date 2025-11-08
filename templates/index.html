@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home AI Camera System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .video-stream {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .status-live {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-offline {
+            background: #f44336;
+            color: white;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-primary {
+            background: #667eea;
+        }
+
+        .btn-success {
+            background: #4CAF50;
+        }
+
+        .btn-danger {
+            background: #f44336;
+        }
+
+        .btn-info {
+            background: #2196F3;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .status-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .status-value {
+            color: #333;
+        }
+
+        .recordings-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .recording-item {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .recording-item:hover {
+            background: #f0f0f0;
+        }
+
+        .recording-name {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .recording-meta {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .bottom-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 Home AI Camera System</h1>
+            <p class="subtitle">Intelligent Surveillance with ML-Powered Detection</p>
+        </header>
+
+        <div class="dashboard">
+            <!-- Video Feed -->
+            <div class="card">
+                <h2>📹 Live Feed</h2>
+                <div class="video-container">
+                    <img src="{{ url_for('video_feed') }}" class="video-stream" alt="Video Feed">
+                    <div class="status-indicator status-live pulse" id="liveIndicator">
+                        ● LIVE
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn-success" id="btnStartRec">Start Recording</button>
+                    <button class="btn-danger" id="btnStopRec" disabled>Stop Recording</button>
+                    <button class="btn-info" id="btnSnapshot">Take Snapshot</button>
+                    <button class="btn-primary" id="btnRefresh">Refresh Feed</button>
+                </div>
+            </div>
+
+            <!-- Status Panel -->
+            <div class="card">
+                <h2>📊 System Status</h2>
+                <div class="status-info">
+                    <div class="status-row">
+                        <span class="status-label">System:</span>
+                        <span class="status-value" id="systemStatus">Running</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Recording:</span>
+                        <span class="status-value" id="recordingStatus">Inactive</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Object Detection:</span>
+                        <span class="status-value" id="detectionStatus">Enabled</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Motion Detection:</span>
+                        <span class="status-value" id="motionStatus">Enabled</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Uptime:</span>
+                        <span class="status-value" id="uptime">N/A</span>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statFrames">0</div>
+                        <div class="stat-label">Frames Processed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statDetections">0</div>
+                        <div class="stat-label">Total Detections</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statMotion">0</div>
+                        <div class="stat-label">Motion Events</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statRecordings">0</div>
+                        <div class="stat-label">Recordings</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-cards">
+            <!-- Recent Recordings -->
+            <div class="card">
+                <h2>🎥 Recent Recordings</h2>
+                <div class="recordings-list" id="recordingsList">
+                    <p style="text-align: center; color: #666;">No recordings yet</p>
+                </div>
+            </div>
+
+            <!-- Recent Snapshots -->
+            <div class="card">
+                <h2>📸 Recent Snapshots</h2>
+                <div class="recordings-list" id="snapshotsList">
+                    <p style="text-align: center; color: #666;">No snapshots yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Initialize Socket.IO
+        const socket = io();
+
+        // Button references
+        const btnStartRec = document.getElementById('btnStartRec');
+        const btnStopRec = document.getElementById('btnStopRec');
+        const btnSnapshot = document.getElementById('btnSnapshot');
+        const btnRefresh = document.getElementById('btnRefresh');
+
+        // Start recording
+        btnStartRec.addEventListener('click', () => {
+            socket.emit('start_recording');
+            btnStartRec.disabled = true;
+            btnStopRec.disabled = false;
+            document.getElementById('recordingStatus').textContent = 'Active';
+        });
+
+        // Stop recording
+        btnStopRec.addEventListener('click', () => {
+            socket.emit('stop_recording');
+            btnStartRec.disabled = false;
+            btnStopRec.disabled = true;
+            document.getElementById('recordingStatus').textContent = 'Inactive';
+            updateRecordings();
+        });
+
+        // Take snapshot
+        btnSnapshot.addEventListener('click', () => {
+            socket.emit('take_snapshot');
+            setTimeout(updateSnapshots, 500);
+        });
+
+        // Refresh feed
+        btnRefresh.addEventListener('click', () => {
+            location.reload();
+        });
+
+        // Update status from API
+        function updateStatus() {
+            fetch('/api/status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('systemStatus').textContent =
+                        data.running ? 'Running' : 'Stopped';
+                    document.getElementById('recordingStatus').textContent =
+                        data.recording ? 'Active' : 'Inactive';
+                    document.getElementById('detectionStatus').textContent =
+                        data.detections_enabled ? 'Enabled' : 'Disabled';
+                    document.getElementById('motionStatus').textContent =
+                        data.motion_enabled ? 'Enabled' : 'Disabled';
+                    document.getElementById('uptime').textContent = data.uptime;
+
+                    if (data.recording) {
+                        btnStartRec.disabled = true;
+                        btnStopRec.disabled = false;
+                    }
+                });
+        }
+
+        // Update statistics
+        function updateStats() {
+            fetch('/api/stats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('statFrames').textContent =
+                        data.frames_processed || 0;
+
+                    const totalDetections = Object.values(data.detections || {})
+                        .reduce((a, b) => a + b, 0);
+                    document.getElementById('statDetections').textContent = totalDetections;
+
+                    document.getElementById('statMotion').textContent =
+                        data.motion_events || 0;
+                    document.getElementById('statRecordings').textContent =
+                        data.recordings || 0;
+                });
+        }
+
+        // Update recordings list
+        function updateRecordings() {
+            fetch('/api/recordings')
+                .then(r => r.json())
+                .then(data => {
+                    const list = document.getElementById('recordingsList');
+                    if (data.length === 0) {
+                        list.innerHTML = '<p style="text-align: center; color: #666;">No recordings yet</p>';
+                        return;
+                    }
+
+                    list.innerHTML = data.slice(0, 10).map(rec => `
+                        <div class="recording-item">
+                            <div class="recording-name">${rec.filename}</div>
+                            <div class="recording-meta">
+                                ${new Date(rec.created).toLocaleString()} •
+                                ${(rec.size / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        // Update snapshots list
+        function updateSnapshots() {
+            fetch('/api/snapshots')
+                .then(r => r.json())
+                .then(data => {
+                    const list = document.getElementById('snapshotsList');
+                    if (data.length === 0) {
+                        list.innerHTML = '<p style="text-align: center; color: #666;">No snapshots yet</p>';
+                        return;
+                    }
+
+                    list.innerHTML = data.slice(0, 10).map(snap => `
+                        <div class="recording-item">
+                            <div class="recording-name">${snap.filename}</div>
+                            <div class="recording-meta">
+                                ${new Date(snap.created).toLocaleString()}
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        // Socket.IO event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('recording_status', (data) => {
+            document.getElementById('recordingStatus').textContent =
+                data.recording ? 'Active' : 'Inactive';
+        });
+
+        socket.on('snapshot_taken', (data) => {
+            console.log('Snapshot saved:', data.filepath);
+            updateSnapshots();
+        });
+
+        // Initialize and update periodically
+        updateStatus();
+        updateStats();
+        updateRecordings();
+        updateSnapshots();
+
+        setInterval(updateStatus, 2000);
+        setInterval(updateStats, 3000);
+        setInterval(updateRecordings, 10000);
+        setInterval(updateSnapshots, 10000);
+    </script>
+</body>
+</html>

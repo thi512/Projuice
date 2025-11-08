@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  camera-system:
+    build: .
+    container_name: home-ai-camera
+    ports:
+      - "5000:5000"
+    devices:
+      - /dev/video0:/dev/video0  # Camera device
+    volumes:
+      - ./recordings:/app/recordings
+      - ./config.yaml:/app/config.yaml
+      - ./.env:/app/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - camera-network
+
+networks:
+  camera-network:
+    driver: bridge
