@@ -132,6 +132,73 @@ home_assistant:
     activity_level: true
     statistics: true
 
+# License Plate Recognition (LPR/ALPR)
+license_plate_recognition:
+  enabled: true
+  languages: ['en']  # OCR languages: en, ch_sim, ch_tra, ja, ko, etc.
+  gpu: true  # Use GPU acceleration for OCR
+  confidence_threshold: 0.5  # Minimum confidence for plate detection
+  country_format: 'auto'  # Options: auto, us, uk, eu, etc.
+  # Optional: Custom cascade file for plate detection
+  cascade_path: null
+
+# Email Reporting System
+email_reporting:
+  enabled: false  # Set to true to enable email reports
+
+  # SMTP Configuration (works with Gmail, Outlook, custom servers, etc.)
+  smtp_server: "smtp.gmail.com"  # Gmail SMTP
+  # Other common servers:
+  # Outlook: smtp.office365.com
+  # Yahoo: smtp.mail.yahoo.com
+  # Custom: your.smtp.server.com
+
+  smtp_port: 587  # 587 for TLS, 465 for SSL, 25 for no encryption
+  use_tls: true
+
+  # Authentication
+  username: "your.email@gmail.com"  # Your email address
+  password: "your_app_password"  # App password (not your regular password!)
+  # For Gmail: Use App Password from https://myaccount.google.com/apppasswords
+  # For Outlook: Use account password or app password
+
+  from_email: "your.email@gmail.com"  # Sender email (usually same as username)
+  from_name: "AI Camera System"  # Display name for emails
+
+  # Recipients
+  recipients:
+    - "recipient1@example.com"
+    - "recipient2@example.com"
+
+  # Report Schedules (all times in 24-hour format)
+  schedules:
+    # Daily summary report
+    daily_summary:
+      enabled: true
+      time: "08:00"  # 8 AM every day
+
+    # Weekly summary report
+    weekly_summary:
+      enabled: true
+      day: "monday"  # monday, tuesday, wednesday, etc.
+      time: "09:00"  # 9 AM
+
+    # License plate activity report
+    license_plate_report:
+      enabled: true
+      time: "18:00"  # 6 PM every day
+
+    # Custom schedules (you can add more)
+    # custom_report:
+    #   enabled: false
+    #   time: "12:00"
+
+  # Instant alerts (send immediately when detected)
+  instant_alerts:
+    send_on_anomaly: false  # Email when anomaly detected
+    send_on_suspicious_plate: false  # Email for suspicious plate patterns
+    min_severity: 0.7  # Only alert if severity >= this value
+
 # Database
 database:
   enabled: true

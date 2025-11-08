@@ -100,6 +100,17 @@ class ChatbotQueryEngine:
                 r'(?:show|find|get).*(?:recording|video|footage)',
                 r'(?:recording|video|footage)',
             ],
+
+            # License plate queries
+            'license_plate': [
+                r'(?:license|number) plate',
+                r'plate (?:number|recognition)',
+                r'(?:show|find).*(?:plate|tag)',
+            ],
+            'specific_plate': [
+                r'plate (?:number )?([A-Z0-9]+)',
+                r'([A-Z0-9]{3,10}).*plate',
+            ],
         }
 
     def process_query(self, query: str) -> Dict[str, Any]:
@@ -213,6 +224,13 @@ class ChatbotQueryEngine:
         if re.search(r'how many|count|number', query):
             entities['wants_count'] = True
 
+        # Extract license plate number
+        if intent in ['license_plate', 'specific_plate']:
+            # Look for alphanumeric sequences (3-10 characters)
+            plate_match = re.search(r'\b([A-Z0-9]{3,10})\b', query.upper())
+            if plate_match:
+                entities['plate_number'] = plate_match.group(1)
+
         return entities
 
     def _execute_query(self, intent: str, entities: Dict, time_range: Dict) -> List[Dict]:
@@ -243,6 +261,9 @@ class ChatbotQueryEngine:
 
             elif intent == 'recordings':
                 results = self._query_recordings(time_range)
+
+            elif intent in ['license_plate', 'specific_plate']:
+                results = self._query_license_plates(entities, time_range)
 
             else:
                 # General detection query
@@ -473,6 +494,37 @@ class ChatbotQueryEngine:
         results.sort(key=lambda x: x['timestamp'], reverse=True)
         return results[:50]
 
+    def _query_license_plates(self, entities: Dict, time_range: Dict) -> List[Dict]:
+        """Query license plate detections"""
+        if not self.db:
+            return []
+
+        plate_number = entities.get('plate_number')
+
+        session = self.db.Session()
+        query = session.query(self.db.LicensePlate).filter(
+            self.db.LicensePlate.timestamp >= time_range['start'],
+            self.db.LicensePlate.timestamp <= time_range['end']
+        )
+
+        # Filter by specific plate if provided
+        if plate_number:
+            query = query.filter(self.db.LicensePlate.plate_number.like(f'%{plate_number}%'))
+
+        results = []
+        for record in query.order_by(self.db.LicensePlate.timestamp.desc()).limit(50):
+            results.append({
+                'type': 'license_plate',
+                'plate_number': record.plate_number,
+                'confidence': record.confidence,
+                'vehicle_type': record.vehicle_type,
+                'vehicle_color': record.vehicle_color,
+                'timestamp': record.timestamp.isoformat()
+            })
+
+        session.close()
+        return results
+
     def _query_all_detections(self, entities: Dict, time_range: Dict) -> List[Dict]:
         """Query all detections"""
         if not self.db:
@@ -531,6 +583,9 @@ class ChatbotQueryEngine:
 
         elif intent == 'recordings':
             return self._format_recording_response(results, count)
+
+        elif intent in ['license_plate', 'specific_plate']:
+            return self._format_plate_response(results, entities, count)
 
         else:
             return f"Found {count} detection(s) matching your query."
@@ -598,6 +653,19 @@ class ChatbotQueryEngine:
         """Format recording query response"""
         return f"Found {count} recording(s) matching your criteria."
 
+    def _format_plate_response(self, results: List[Dict], entities: Dict, count: int) -> str:
+        """Format license plate query response"""
+        plate_number = entities.get('plate_number')
+
+        if plate_number:
+            return f"Found {count} occurrence(s) of license plate {plate_number}."
+
+        # Count unique plates
+        unique_plates = len(set(r['plate_number'] for r in results))
+        latest = results[0]
+
+        return f"Found {count} license plate detection(s) ({unique_plates} unique plates). Most recent: {latest['plate_number']} at {self._format_time(latest['timestamp'])}"
+
     def _format_no_results_response(self, intent: str, entities: Dict, time_range: Dict) -> str:
         """Format response when no results found"""
         time_str = self._format_time_range(time_range)
@@ -613,6 +681,12 @@ class ChatbotQueryEngine:
 
         elif intent == 'anomaly':
             return f"No anomalies detected {time_str}. Everything looks normal!"
+
+        elif intent in ['license_plate', 'specific_plate']:
+            plate_number = entities.get('plate_number')
+            if plate_number:
+                return f"No detections of license plate {plate_number} found {time_str}."
+            return f"No license plates detected {time_str}."
 
         return f"No results found {time_str}."
 

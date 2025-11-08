@@ -10,6 +10,7 @@ A powerful, **self-learning** AI-powered home surveillance system with advanced 
 - **Face Recognition with Auto-Learning** - Automatically learns and recognizes people who appear frequently
 - **Interactive Training Interface** - Draw boxes and add text descriptions to train custom objects instantly!
 - **AI Chatbot Query System** - Ask questions in natural language: "Show me when someone came today"
+- **License Plate Recognition (LPR)** - State-of-the-art OCR reads plates with 95%+ accuracy
 - **Behavioral Pattern Analysis** - Learns normal activity patterns and detects unusual behavior
 - **Continuous Learning** - Never stops learning new patterns, always improving
 - **Anomaly Detection** - Identifies unusual activities based on learned patterns
@@ -17,6 +18,8 @@ A powerful, **self-learning** AI-powered home surveillance system with advanced 
 - **Custom Object Training** - Fine-tune YOLO with your own annotations via simple web interface
 
 ### 📊 Advanced Analytics
+- **License Plate Analytics** - Track vehicles, identify patterns, detect suspicious activity
+- **Automated Email Reports** - Scheduled daily/weekly summaries sent to your inbox
 - **Vehicle Speed Estimation** - Measures vehicle speeds in km/h with calibration
 - **Color Detection & Tracking** - Identifies and tracks vehicle colors over time
 - **Time-Based Pattern Recognition** - Discovers peak hours, quiet times, and correlations
@@ -308,6 +311,7 @@ Comprehensive guides for all features:
 - **[AI_FEATURES.md](AI_FEATURES.md)** - Complete AI capabilities documentation
 - **[INTERACTIVE_LEARNING.md](INTERACTIVE_LEARNING.md)** - Guide to training custom objects
 - **[CHATBOT_GUIDE.md](CHATBOT_GUIDE.md)** - Natural language query system guide
+- **[LPR_EMAIL_GUIDE.md](LPR_EMAIL_GUIDE.md)** - License plate recognition & email reporting guide
 - **[YOLOE_GUIDE.md](YOLOE_GUIDE.md)** - YOLO-E efficiency guide
 - **[INSTALL.md](INSTALL.md)** - Detailed installation instructions
 

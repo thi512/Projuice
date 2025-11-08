@@ -61,6 +61,24 @@ class VehicleRecord(Base):
     metadata = Column(JSON)
 
 
+class LicensePlate(Base):
+    """License plate recognition records"""
+    __tablename__ = 'license_plates'
+
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, default=datetime.now, index=True)
+    plate_number = Column(String(20), index=True)  # License plate number
+    confidence = Column(Float)  # OCR confidence
+    vehicle_type = Column(String(50))  # Associated vehicle type
+    vehicle_color = Column(String(50))  # Associated vehicle color
+    vehicle_id = Column(String(100))  # Link to vehicle record
+    country = Column(String(10))  # Country/region code
+    camera_id = Column(String(50))
+    bbox = Column(JSON)  # Plate bounding box
+    raw_text = Column(String(50))  # Raw OCR text before cleaning
+    metadata = Column(JSON)  # Additional data
+
+
 class Anomaly(Base):
     """Anomaly detection records"""
     __tablename__ = 'anomalies'
@@ -173,6 +191,34 @@ class DatabaseManager:
             session.commit()
         except Exception as e:
             logger.error(f"Failed to add vehicle record: {e}")
+            session.rollback()
+        finally:
+            session.close()
+
+    def add_license_plate(self, plate_number: str, confidence: float,
+                         vehicle_type: str = None, vehicle_color: str = None,
+                         vehicle_id: str = None, country: str = None,
+                         camera_id: str = 'default', bbox: Dict = None,
+                         raw_text: str = None, metadata: Dict = None):
+        """Add license plate record"""
+        session = self.get_session()
+        try:
+            plate = LicensePlate(
+                plate_number=plate_number,
+                confidence=confidence,
+                vehicle_type=vehicle_type,
+                vehicle_color=vehicle_color,
+                vehicle_id=vehicle_id,
+                country=country,
+                camera_id=camera_id,
+                bbox=bbox or {},
+                raw_text=raw_text,
+                metadata=metadata or {}
+            )
+            session.add(plate)
+            session.commit()
+        except Exception as e:
+            logger.error(f"Failed to add license plate: {e}")
             session.rollback()
         finally:
             session.close()
