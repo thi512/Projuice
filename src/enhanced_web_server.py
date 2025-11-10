@@ -407,6 +407,73 @@ def clear_chat_history(session_id):
     return jsonify({'success': True})
 
 
+@app.route('/settings')
+def settings_page():
+    """Render settings page"""
+    return render_template('settings.html')
+
+
+@app.route('/api/speed/settings', methods=['GET'])
+def get_speed_settings():
+    """Get current speed calibration settings"""
+    if not hasattr(camera_system, 'speed_estimator'):
+        return jsonify({'error': 'Speed estimator not available'}), 500
+
+    return jsonify(camera_system.speed_estimator.get_settings())
+
+
+@app.route('/api/speed/settings', methods=['POST'])
+def update_speed_settings():
+    """Update speed calibration settings"""
+    if not hasattr(camera_system, 'speed_estimator'):
+        return jsonify({'error': 'Speed estimator not available'}), 500
+
+    try:
+        settings = request.json
+        success = camera_system.speed_estimator.update_settings(settings)
+
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Settings updated successfully',
+                'settings': camera_system.speed_estimator.get_settings()
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Failed to save settings'}), 500
+
+    except Exception as e:
+        logger.error(f"Failed to update speed settings: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/speed/calibration/guide', methods=['GET'])
+def get_calibration_guide():
+    """Get calibration guide for current method"""
+    if not hasattr(camera_system, 'speed_estimator'):
+        return jsonify({'error': 'Speed estimator not available'}), 500
+
+    return jsonify(camera_system.speed_estimator.get_calibration_guide())
+
+
+@app.route('/api/speed/statistics', methods=['GET'])
+def get_speed_statistics():
+    """Get speed measurement statistics"""
+    if not hasattr(camera_system, 'speed_estimator'):
+        return jsonify({'error': 'Speed estimator not available'}), 500
+
+    return jsonify(camera_system.speed_estimator.get_speed_statistics())
+
+
+@app.route('/api/speed/clear', methods=['POST'])
+def clear_speed_tracking():
+    """Clear speed tracking data"""
+    if not hasattr(camera_system, 'speed_estimator'):
+        return jsonify({'error': 'Speed estimator not available'}), 500
+
+    camera_system.speed_estimator.clear_tracking()
+    return jsonify({'success': True, 'message': 'Tracking data cleared'})
+
+
 def generate_frames():
     """Generate frames for video streaming"""
     while True:

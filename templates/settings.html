@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Calibration Settings - AI Camera System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .nav {
+            display: flex;
+            gap: 10px;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .nav a {
+            padding: 10px 20px;
+            background: white;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #667eea;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .nav a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .section h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .method-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .method-card {
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 3px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .method-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .method-card.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .method-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .method-card .difficulty {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .difficulty.easy {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .difficulty.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .difficulty.advanced {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .zone-list {
+            margin-top: 15px;
+        }
+
+        .zone-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+
+        .zone-item input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+        }
+
+        .zone-item button {
+            padding: 8px 15px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .calibration-canvas-container {
+            position: relative;
+            margin: 20px 0;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #calibrationCanvas {
+            display: block;
+            max-width: 100%;
+            cursor: crosshair;
+        }
+
+        .point-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .point-item {
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+
+        .point-item strong {
+            color: #667eea;
+        }
+
+        .guide-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .guide-box h4 {
+            color: #2196f3;
+            margin-bottom: 10px;
+        }
+
+        .guide-box ol {
+            margin-left: 20px;
+        }
+
+        .guide-box li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            font-size: 14px;
+            color: #777;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Speed Calibration Settings</h1>
+            <p>Configure professional-grade vehicle speed estimation</p>
+        </div>
+
+        <div class="nav">
+            <a href="/">🏠 Dashboard</a>
+            <a href="/analytics">📊 Analytics</a>
+            <a href="/chat">💬 Chatbot</a>
+            <a href="/annotate">🎯 Annotate</a>
+            <a href="/settings">⚙️ Settings</a>
+        </div>
+
+        <div class="content">
+            <div id="alertBox"></div>
+
+            <!-- Method Selection -->
+            <div class="section">
+                <h2>1️⃣ Select Calibration Method</h2>
+                <div class="method-selector">
+                    <div class="method-card" data-method="simple">
+                        <h4>Simple Global</h4>
+                        <span class="difficulty easy">Easy</span>
+                        <p style="margin-top: 10px; color: #666;">Single calibration for entire view. Quick setup but less accurate for perspective.</p>
+                    </div>
+                    <div class="method-card" data-method="zoned">
+                        <h4>Zone-Based</h4>
+                        <span class="difficulty medium">Medium</span>
+                        <p style="margin-top: 10px; color: #666;">Different calibrations for different zones. Good accuracy with moderate setup.</p>
+                    </div>
+                    <div class="method-card" data-method="homography">
+                        <h4>Homography Transform</h4>
+                        <span class="difficulty advanced">Advanced</span>
+                        <p style="margin-top: 10px; color: #666;">Perspective correction using reference points. Professional-grade accuracy.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simple Calibration -->
+            <div class="section hidden" id="simpleConfig">
+                <h2>Simple Calibration</h2>
+                <div class="guide-box">
+                    <h4>📖 How to Calibrate</h4>
+                    <ol id="simpleGuide"></ol>
+                </div>
+                <div class="form-group">
+                    <label>Pixels Per Meter:</label>
+                    <input type="number" id="pixelsPerMeter" min="1" step="0.1" placeholder="e.g., 50">
+                    <small style="color: #777; display: block; margin-top: 5px;">
+                        Example: If 5 meters = 250 pixels, then enter 50
+                    </small>
+                </div>
+            </div>
+
+            <!-- Zoned Calibration -->
+            <div class="section hidden" id="zonedConfig">
+                <h2>Zone-Based Calibration</h2>
+                <div class="guide-box">
+                    <h4>📖 How to Calibrate</h4>
+                    <ol id="zonedGuide"></ol>
+                </div>
+                <h3>Define Zones</h3>
+                <div class="zone-list" id="zoneList"></div>
+                <button class="btn btn-secondary" onclick="addZone()">+ Add Zone</button>
+            </div>
+
+            <!-- Homography Calibration -->
+            <div class="section hidden" id="homographyConfig">
+                <h2>Homography Calibration</h2>
+                <div class="guide-box">
+                    <h4>📖 How to Calibrate</h4>
+                    <ol id="homographyGuide"></ol>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>Instructions:</strong> Click 4 points on the camera image that form a rectangle on the road, then enter the real-world dimensions.
+                </div>
+
+                <div class="calibration-canvas-container">
+                    <canvas id="calibrationCanvas" width="640" height="480"></canvas>
+                </div>
+
+                <h3>Calibration Points</h3>
+                <div class="point-list" id="pointList"></div>
+
+                <h3>Real-World Coordinates (meters)</h3>
+                <div class="form-group">
+                    <label>Rectangle Width (meters):</label>
+                    <input type="number" id="rectWidth" min="0.1" step="0.1" placeholder="e.g., 2.5" value="2.5">
+                </div>
+                <div class="form-group">
+                    <label>Rectangle Length (meters):</label>
+                    <input type="number" id="rectLength" min="0.1" step="0.1" placeholder="e.g., 5.0" value="5.0">
+                </div>
+                <button class="btn btn-secondary" onclick="clearPoints()">Clear Points</button>
+                <button class="btn btn-success" onclick="computeHomography()">Compute Homography</button>
+            </div>
+
+            <!-- Camera Parameters -->
+            <div class="section">
+                <h2>📷 Camera Parameters (Optional)</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label>Camera Height (meters):</label>
+                        <input type="number" id="cameraHeight" min="0" step="0.1" placeholder="e.g., 4.0">
+                    </div>
+                    <div class="form-group">
+                        <label>Distance to Road (meters):</label>
+                        <input type="number" id="cameraDistance" min="0" step="0.1" placeholder="e.g., 6.0">
+                    </div>
+                    <div class="form-group">
+                        <label>Camera Angle (degrees):</label>
+                        <input type="number" id="cameraAngle" min="0" max="90" step="1" placeholder="e.g., 30">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Speed Statistics -->
+            <div class="section">
+                <h2>📈 Current Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="value" id="statAvgSpeed">--</div>
+                        <div class="label">Avg Speed (km/h)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="statMaxSpeed">--</div>
+                        <div class="label">Max Speed (km/h)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="statTotalVehicles">--</div>
+                        <div class="label">Total Vehicles</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="statMethod">--</div>
+                        <div class="label">Active Method</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="loadStatistics()" style="margin-top: 15px;">🔄 Refresh Statistics</button>
+                <button class="btn btn-secondary" onclick="clearTracking()" style="margin-top: 15px;">🗑️ Clear Tracking Data</button>
+            </div>
+
+            <!-- Save Button -->
+            <div style="text-align: center; padding: 30px;">
+                <button class="btn btn-primary" onclick="saveSettings()" style="font-size: 18px; padding: 15px 40px;">
+                    💾 Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMethod = 'simple';
+        let calibrationPoints = [];
+        let videoImage = null;
+        const canvas = document.getElementById('calibrationCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Load current settings on page load
+        window.addEventListener('load', () => {
+            loadSettings();
+            loadStatistics();
+            loadVideoSnapshot();
+        });
+
+        // Method selection
+        document.querySelectorAll('.method-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const method = card.dataset.method;
+                selectMethod(method);
+            });
+        });
+
+        function selectMethod(method) {
+            currentMethod = method;
+
+            // Update UI
+            document.querySelectorAll('.method-card').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.method-card[data-method="${method}"]`).classList.add('active');
+
+            // Show/hide config sections
+            document.getElementById('simpleConfig').classList.add('hidden');
+            document.getElementById('zonedConfig').classList.add('hidden');
+            document.getElementById('homographyConfig').classList.add('hidden');
+            document.getElementById(`${method}Config`).classList.remove('hidden');
+
+            // Load guide for selected method
+            loadGuide(method);
+        }
+
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/speed/settings');
+                const settings = await response.json();
+
+                // Set method
+                selectMethod(settings.method || 'simple');
+
+                // Load simple settings
+                document.getElementById('pixelsPerMeter').value = settings.pixels_per_meter || 50;
+
+                // Load zones
+                if (settings.zones && settings.zones.length > 0) {
+                    settings.zones.forEach(zone => addZone(zone));
+                }
+
+                // Load homography points
+                if (settings.homography) {
+                    calibrationPoints = settings.homography.image_points || [];
+                    updatePointList();
+                }
+
+                // Load camera parameters
+                if (settings.camera_height) document.getElementById('cameraHeight').value = settings.camera_height;
+                if (settings.camera_distance) document.getElementById('cameraDistance').value = settings.camera_distance;
+                if (settings.camera_angle) document.getElementById('cameraAngle').value = settings.camera_angle;
+
+            } catch (error) {
+                showAlert('Failed to load settings: ' + error.message, 'error');
+            }
+        }
+
+        async function saveSettings() {
+            try {
+                const settings = {
+                    method: currentMethod,
+                    pixels_per_meter: parseFloat(document.getElementById('pixelsPerMeter').value) || 50,
+                    zones: getZonesData(),
+                    homography: {
+                        image_points: calibrationPoints,
+                        world_points: getWorldPoints()
+                    },
+                    camera_height: parseFloat(document.getElementById('cameraHeight').value) || null,
+                    camera_distance: parseFloat(document.getElementById('cameraDistance').value) || null,
+                    camera_angle: parseFloat(document.getElementById('cameraAngle').value) || null
+                };
+
+                const response = await fetch('/api/speed/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('✅ Settings saved successfully! They will be used immediately.', 'success');
+                } else {
+                    showAlert('❌ Failed to save settings: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ Error saving settings: ' + error.message, 'error');
+            }
+        }
+
+        async function loadGuide(method) {
+            try {
+                const response = await fetch('/api/speed/calibration/guide?method=' + method);
+                const guide = await response.json();
+
+                const guideElement = document.getElementById(`${method}Guide`);
+                if (guideElement && guide.steps) {
+                    guideElement.innerHTML = guide.steps.map(step => `<li>${step}</li>`).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load guide:', error);
+            }
+        }
+
+        async function loadStatistics() {
+            try {
+                const response = await fetch('/api/speed/statistics');
+                const stats = await response.json();
+
+                document.getElementById('statAvgSpeed').textContent = stats.average_speed?.toFixed(1) || '--';
+                document.getElementById('statMaxSpeed').textContent = stats.max_speed?.toFixed(1) || '--';
+                document.getElementById('statTotalVehicles').textContent = stats.total_vehicles || 0;
+                document.getElementById('statMethod').textContent = stats.method || '--';
+            } catch (error) {
+                console.error('Failed to load statistics:', error);
+            }
+        }
+
+        async function clearTracking() {
+            if (!confirm('Clear all speed tracking data? This cannot be undone.')) return;
+
+            try {
+                const response = await fetch('/api/speed/clear', { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('✅ Tracking data cleared', 'success');
+                    loadStatistics();
+                }
+            } catch (error) {
+                showAlert('❌ Failed to clear data: ' + error.message, 'error');
+            }
+        }
+
+        // Zone management
+        function addZone(zone = null) {
+            const zoneList = document.getElementById('zoneList');
+            const zoneItem = document.createElement('div');
+            zoneItem.className = 'zone-item';
+            zoneItem.innerHTML = `
+                <input type="number" placeholder="Y Min (e.g., 0)" value="${zone?.y_range[0] || ''}" class="zone-y-min">
+                <input type="number" placeholder="Y Max (e.g., 240)" value="${zone?.y_range[1] || ''}" class="zone-y-max">
+                <input type="number" placeholder="Pixels/Meter (e.g., 25)" value="${zone?.pixels_per_meter || ''}" class="zone-ppm">
+                <button onclick="this.parentElement.remove()">Remove</button>
+            `;
+            zoneList.appendChild(zoneItem);
+        }
+
+        function getZonesData() {
+            const zones = [];
+            document.querySelectorAll('.zone-item').forEach(item => {
+                const yMin = parseFloat(item.querySelector('.zone-y-min').value);
+                const yMax = parseFloat(item.querySelector('.zone-y-max').value);
+                const ppm = parseFloat(item.querySelector('.zone-ppm').value);
+                if (!isNaN(yMin) && !isNaN(yMax) && !isNaN(ppm)) {
+                    zones.push({
+                        y_range: [yMin, yMax],
+                        pixels_per_meter: ppm
+                    });
+                }
+            });
+            return zones;
+        }
+
+        // Homography calibration
+        async function loadVideoSnapshot() {
+            // Load a frame from the video feed
+            const img = new Image();
+            img.onload = () => {
+                videoImage = img;
+                canvas.width = img.width;
+                canvas.height = img.height;
+                drawCanvas();
+            };
+            img.src = '/video_feed';
+            // Note: This might not work due to CORS. Alternative: capture via API
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if (currentMethod !== 'homography') return;
+            if (calibrationPoints.length >= 4) {
+                showAlert('Already have 4 points. Clear them first.', 'error');
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Scale to canvas coordinates
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const canvasX = x * scaleX;
+            const canvasY = y * scaleY;
+
+            calibrationPoints.push([canvasX, canvasY]);
+            updatePointList();
+            drawCanvas();
+        });
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw video frame if available
+            if (videoImage) {
+                ctx.drawImage(videoImage, 0, 0, canvas.width, canvas.height);
+            }
+
+            // Draw points
+            calibrationPoints.forEach((point, index) => {
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(point[0], point[1], 8, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '14px bold Arial';
+                ctx.fillText((index + 1).toString(), point[0] - 4, point[1] + 5);
+            });
+
+            // Draw lines connecting points
+            if (calibrationPoints.length > 1) {
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(calibrationPoints[0][0], calibrationPoints[0][1]);
+                for (let i = 1; i < calibrationPoints.length; i++) {
+                    ctx.lineTo(calibrationPoints[i][0], calibrationPoints[i][1]);
+                }
+                if (calibrationPoints.length === 4) {
+                    ctx.closePath();
+                }
+                ctx.stroke();
+            }
+        }
+
+        function updatePointList() {
+            const pointList = document.getElementById('pointList');
+            pointList.innerHTML = '';
+
+            const labels = ['Bottom-Left (near)', 'Bottom-Right (near)', 'Top-Left (far)', 'Top-Right (far)'];
+            calibrationPoints.forEach((point, index) => {
+                const div = document.createElement('div');
+                div.className = 'point-item';
+                div.innerHTML = `<strong>Point ${index + 1}</strong> (${labels[index]})<br>X: ${point[0].toFixed(0)}, Y: ${point[1].toFixed(0)}`;
+                pointList.appendChild(div);
+            });
+        }
+
+        function clearPoints() {
+            calibrationPoints = [];
+            updatePointList();
+            drawCanvas();
+        }
+
+        function getWorldPoints() {
+            const width = parseFloat(document.getElementById('rectWidth').value) || 2.5;
+            const length = parseFloat(document.getElementById('rectLength').value) || 5.0;
+
+            return [
+                [0, 0],
+                [width, 0],
+                [0, length],
+                [width, length]
+            ];
+        }
+
+        function computeHomography() {
+            if (calibrationPoints.length < 4) {
+                showAlert('❌ Please select 4 calibration points first', 'error');
+                return;
+            }
+            showAlert('✅ Homography will be computed when you save settings', 'success');
+        }
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            const alertClass = type === 'error' ? 'alert-error' : (type === 'success' ? 'alert-success' : 'alert-info');
+            alertBox.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            setTimeout(() => {
+                alertBox.innerHTML = '';
+            }, 5000);
+        }
+
+        // Refresh statistics every 10 seconds
+        setInterval(loadStatistics, 10000);
+    </script>
+</body>
+</html>

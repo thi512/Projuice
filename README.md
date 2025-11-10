@@ -20,7 +20,12 @@ A powerful, **self-learning** AI-powered home surveillance system with advanced 
 ### 📊 Advanced Analytics
 - **License Plate Analytics** - Track vehicles, identify patterns, detect suspicious activity
 - **Automated Email Reports** - Scheduled daily/weekly summaries sent to your inbox
-- **Vehicle Speed Estimation** - Measures vehicle speeds in km/h with calibration
+- **🆕 Professional Speed Calibration** - **3 calibration methods** (Simple, Zone-Based, Homography)
+  - **Web-based calibration UI** with visual point-and-click setup
+  - **Perspective correction** for traffic-camera accuracy
+  - **Persistent settings** that survive restarts
+  - **Real-time statistics** and validation
+- **Vehicle Speed Estimation** - Measures vehicle speeds in km/h with professional accuracy
 - **Color Detection & Tracking** - Identifies and tracks vehicle colors over time
 - **Time-Based Pattern Recognition** - Discovers peak hours, quiet times, and correlations
 - **Comprehensive Dashboard** - Beautiful graphs, charts, and real-time insights
@@ -48,6 +53,7 @@ See **[AI_FEATURES.md](AI_FEATURES.md)** for complete documentation of all AI ca
 - **AI Chatbot** - Ask questions about your footage in natural language
 - **Interactive Learning** - Train custom objects by drawing boxes
 - **Advanced Analytics Dashboard** - Beautiful graphs and insights
+- **🆕 Speed Calibration Settings** - Professional calibration interface at `/settings`
 - **Remote Control** - Start/stop recording, take snapshots remotely
 - **System Monitoring** - View statistics, status, and performance metrics
 - **Recording History** - Browse and manage saved recordings and snapshots
@@ -104,6 +110,7 @@ Then open your browser to: **http://localhost:5000**
 - **http://localhost:5000/analytics** - Advanced analytics dashboard
 - **http://localhost:5000/annotate** - Interactive training interface
 - **http://localhost:5000/chat** - AI chatbot for searching footage
+- **🆕 http://localhost:5000/settings** - Professional speed calibration settings
 
 #### Headless Mode (No Display)
 ```bash

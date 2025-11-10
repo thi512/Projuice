@@ -24,6 +24,7 @@ from .config import Config
 from .face_recognition_ai import FaceRecognitionSystem
 from .behavioral_analysis import BehavioralAnalysisEngine
 from .advanced_analytics import AdvancedAnalytics
+from .professional_speed_estimation import PerspectiveSpeedEstimator
 from .database import DatabaseManager
 from .continuous_learning import ContinuousLearningSystem
 from .reolink_integration import ReolinkIntegration
@@ -50,6 +51,7 @@ class EnhancedCameraSystem:
         self.face_ai = None
         self.behavior = None
         self.analytics = None
+        self.speed_estimator = None  # Professional speed estimation
         self.db = None
         self.learning_system = None
         self.reolink = None
@@ -130,6 +132,13 @@ class EnhancedCameraSystem:
             pixels_per_meter = self.config.get('ai_features.advanced_analytics.speed_estimation.pixels_per_meter', 50)
             self.analytics = AdvancedAnalytics(pixels_per_meter=pixels_per_meter, fps=cam_config['fps'])
             logger.info("Advanced analytics initialized")
+
+        # Professional speed estimation (new multi-method system)
+        self.speed_estimator = PerspectiveSpeedEstimator(
+            config=self.config,
+            settings_file='data/speed_calibration.json'
+        )
+        logger.info(f"Professional speed estimation initialized (method: {self.speed_estimator.method})")
 
         # Recorder
         rec_config = self.config.get_recorder_config()
@@ -292,11 +301,24 @@ class EnhancedCameraSystem:
 
                         # Process vehicles
                         if class_name in ['car', 'truck', 'bus', 'motorcycle']:
-                            vehicle_analysis = self.analytics.analyze_vehicle(
-                                frame,
-                                f"vehicle_{frame_count}",
-                                tuple(map(int, det['bbox']))
-                            )
+                            vehicle_analysis = {}
+
+                            # Use analytics for color detection
+                            if self.analytics:
+                                vehicle_analysis = self.analytics.analyze_vehicle(
+                                    frame,
+                                    f"vehicle_{frame_count}",
+                                    tuple(map(int, det['bbox']))
+                                )
+
+                            # Use professional speed estimator for accurate speed
+                            if self.speed_estimator:
+                                speed = self.speed_estimator.track_object(
+                                    f"vehicle_{frame_count}",
+                                    tuple(map(int, det['bbox']))
+                                )
+                                if speed:
+                                    vehicle_analysis['speed'] = speed
 
                             if vehicle_analysis.get('speed'):
                                 # Store vehicle data
