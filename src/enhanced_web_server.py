@@ -10,6 +10,10 @@ from datetime import datetime
 import os
 
 from .chatbot_query_engine import ChatbotQueryEngine, ChatbotConversationManager
+from .camera_discovery import CameraDiscovery
+from .camera_manager import CameraManager
+from .entity_labeling import EntityLabeling
+from .ha_settings_manager import HomeAssistantSettingsManager
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +25,17 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 camera_system = None
 chatbot_engine = None
 conversation_manager = None
+camera_discovery = None
+camera_manager = None
+entity_labeling = None
+ha_settings = None
 
 
 def init_enhanced_web_server(cam_system):
     """Initialize enhanced web server with camera system reference"""
     global camera_system, chatbot_engine, conversation_manager
+    global camera_discovery, camera_manager, entity_labeling, ha_settings
+
     camera_system = cam_system
 
     # Initialize chatbot components
@@ -33,6 +43,16 @@ def init_enhanced_web_server(cam_system):
         chatbot_engine = ChatbotQueryEngine(cam_system.db, cam_system.config)
         conversation_manager = ChatbotConversationManager()
         logger.info("Chatbot query engine initialized")
+
+    # Initialize new components
+    camera_discovery = CameraDiscovery()
+    camera_manager = CameraManager()
+    entity_labeling = EntityLabeling(
+        cam_system.db if hasattr(cam_system, 'db') else None,
+        cam_system.face_ai if hasattr(cam_system, 'face_ai') else None
+    )
+    ha_settings = HomeAssistantSettingsManager()
+    logger.info("Settings managers initialized")
 
 
 @app.route('/')
@@ -472,6 +492,306 @@ def clear_speed_tracking():
 
     camera_system.speed_estimator.clear_tracking()
     return jsonify({'success': True, 'message': 'Tracking data cleared'})
+
+
+# ===== Camera Management API =====
+
+@app.route('/api/cameras/discover', methods=['POST'])
+def discover_cameras():
+    """Discover cameras on the network"""
+    if not camera_discovery:
+        return jsonify({'error': 'Camera discovery not available'}), 500
+
+    try:
+        data = request.json or {}
+        network_range = data.get('network_range')
+
+        cameras = camera_discovery.discover_all(network_range)
+        return jsonify({'success': True, 'cameras': cameras, 'count': len(cameras)})
+
+    except Exception as e:
+        logger.error(f"Camera discovery failed: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/cameras/interfaces', methods=['GET'])
+def get_network_interfaces():
+    """Get network interfaces for scanning"""
+    if not camera_discovery:
+        return jsonify({'error': 'Camera discovery not available'}), 500
+
+    interfaces = camera_discovery.get_network_interfaces()
+    return jsonify({'interfaces': interfaces})
+
+
+@app.route('/api/cameras', methods=['GET'])
+def get_cameras():
+    """Get all cameras"""
+    if not camera_manager:
+        return jsonify({'error': 'Camera manager not available'}), 500
+
+    cameras = camera_manager.get_all_cameras()
+    return jsonify({'cameras': cameras})
+
+
+@app.route('/api/cameras', methods=['POST'])
+def add_camera():
+    """Add a new camera"""
+    if not camera_manager:
+        return jsonify({'error': 'Camera manager not available'}), 500
+
+    try:
+        camera = request.json
+        camera_id = camera_manager.add_camera(camera)
+        return jsonify({'success': True, 'camera_id': camera_id})
+
+    except Exception as e:
+        logger.error(f"Failed to add camera: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/cameras/<camera_id>', methods=['PUT'])
+def update_camera(camera_id):
+    """Update camera settings"""
+    if not camera_manager:
+        return jsonify({'error': 'Camera manager not available'}), 500
+
+    try:
+        updates = request.json
+        success = camera_manager.update_camera(camera_id, updates)
+        return jsonify({'success': success})
+
+    except Exception as e:
+        logger.error(f"Failed to update camera: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/cameras/<camera_id>', methods=['DELETE'])
+def delete_camera(camera_id):
+    """Delete a camera"""
+    if not camera_manager:
+        return jsonify({'error': 'Camera manager not available'}), 500
+
+    try:
+        success = camera_manager.remove_camera(camera_id)
+        return jsonify({'success': success})
+
+    except Exception as e:
+        logger.error(f"Failed to delete camera: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/cameras/homepage', methods=['GET'])
+def get_homepage_cameras():
+    """Get cameras for homepage"""
+    if not camera_manager:
+        return jsonify({'error': 'Camera manager not available'}), 500
+
+    cameras = camera_manager.get_homepage_cameras()
+    camera_ids = camera_manager.homepage_cameras
+    return jsonify({'cameras': cameras, 'camera_ids': camera_ids})
+
+
+@app.route('/api/cameras/homepage', methods=['POST'])
+def set_homepage_cameras():
+    """Set cameras for homepage"""
+    if not camera_manager:
+        return jsonify({'error': 'Camera manager not available'}), 500
+
+    try:
+        data = request.json
+        camera_ids = data.get('camera_ids', [])
+        camera_manager.set_homepage_cameras(camera_ids)
+        return jsonify({'success': True})
+
+    except Exception as e:
+        logger.error(f"Failed to set homepage cameras: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/cameras/<camera_id>/test', methods=['POST'])
+def test_camera_connection(camera_id):
+    """Test camera connection"""
+    if not camera_manager:
+        return jsonify({'error': 'Camera manager not available'}), 500
+
+    try:
+        camera = camera_manager.get_camera(camera_id)
+        if not camera:
+            return jsonify({'success': False, 'message': 'Camera not found'}), 404
+
+        data = request.json or {}
+        username = data.get('username', '')
+        password = data.get('password', '')
+
+        result = camera_manager.test_camera_connection(camera, username, password)
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Camera test failed: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# ===== Entity Labeling API =====
+
+@app.route('/api/entities/unlabeled/faces', methods=['GET'])
+def get_unlabeled_faces():
+    """Get unlabeled faces"""
+    if not entity_labeling:
+        return jsonify({'error': 'Entity labeling not available'}), 500
+
+    min_appearances = request.args.get('min_appearances', 3, type=int)
+    days = request.args.get('days', 30, type=int)
+
+    faces = entity_labeling.get_unlabeled_faces(min_appearances, days)
+    return jsonify({'faces': faces})
+
+
+@app.route('/api/entities/unlabeled/vehicles', methods=['GET'])
+def get_unlabeled_vehicles():
+    """Get frequent vehicles"""
+    if not entity_labeling:
+        return jsonify({'error': 'Entity labeling not available'}), 500
+
+    min_appearances = request.args.get('min_appearances', 5, type=int)
+    days = request.args.get('days', 30, type=int)
+
+    vehicles = entity_labeling.get_frequent_vehicles(min_appearances, days)
+    return jsonify({'vehicles': vehicles})
+
+
+@app.route('/api/entities/label/face', methods=['POST'])
+def label_face():
+    """Label a face"""
+    if not entity_labeling:
+        return jsonify({'error': 'Entity labeling not available'}), 500
+
+    try:
+        data = request.json
+        person_id = data.get('person_id')
+        new_name = data.get('name')
+        notes = data.get('notes', '')
+
+        success = entity_labeling.label_face(person_id, new_name, notes)
+        return jsonify({'success': success})
+
+    except Exception as e:
+        logger.error(f"Failed to label face: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/entities/label/vehicle', methods=['POST'])
+def label_vehicle():
+    """Label a vehicle"""
+    if not entity_labeling:
+        return jsonify({'error': 'Entity labeling not available'}), 500
+
+    try:
+        data = request.json
+        identifier = data.get('identifier')
+        label = data.get('label')
+        notes = data.get('notes', '')
+
+        success = entity_labeling.label_vehicle(identifier, label, notes)
+        return jsonify({'success': success})
+
+    except Exception as e:
+        logger.error(f"Failed to label vehicle: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/entities/labeled', methods=['GET'])
+def get_labeled_entities():
+    """Get all labeled entities"""
+    if not entity_labeling:
+        return jsonify({'error': 'Entity labeling not available'}), 500
+
+    entity_type = request.args.get('type', 'all')
+    entities = entity_labeling.get_labeled_entities(entity_type)
+    return jsonify({'entities': entities})
+
+
+@app.route('/api/entities/<entity_type>/<identifier>', methods=['DELETE'])
+def remove_entity_label(entity_type, identifier):
+    """Remove entity label"""
+    if not entity_labeling:
+        return jsonify({'error': 'Entity labeling not available'}), 500
+
+    try:
+        success = entity_labeling.remove_label(identifier, entity_type)
+        return jsonify({'success': success})
+
+    except Exception as e:
+        logger.error(f"Failed to remove label: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/entities/<entity_type>/<identifier>/history', methods=['GET'])
+def get_entity_history(entity_type, identifier):
+    """Get entity appearance history"""
+    if not entity_labeling:
+        return jsonify({'error': 'Entity labeling not available'}), 500
+
+    days = request.args.get('days', 30, type=int)
+    history = entity_labeling.get_entity_history(identifier, entity_type, days)
+    return jsonify({'history': history})
+
+
+# ===== Home Assistant Settings API =====
+
+@app.route('/api/ha/settings', methods=['GET'])
+def get_ha_settings():
+    """Get Home Assistant settings"""
+    if not ha_settings:
+        return jsonify({'error': 'HA settings not available'}), 500
+
+    return jsonify(ha_settings.get_settings())
+
+
+@app.route('/api/ha/settings', methods=['POST'])
+def update_ha_settings():
+    """Update Home Assistant settings"""
+    if not ha_settings:
+        return jsonify({'error': 'HA settings not available'}), 500
+
+    try:
+        updates = request.json
+        success = ha_settings.update_settings(updates)
+        return jsonify({'success': success})
+
+    except Exception as e:
+        logger.error(f"Failed to update HA settings: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/ha/test', methods=['POST'])
+def test_ha_connection():
+    """Test Home Assistant MQTT connection"""
+    if not ha_settings:
+        return jsonify({'error': 'HA settings not available'}), 500
+
+    result = ha_settings.test_connection()
+    return jsonify(result)
+
+
+@app.route('/api/ha/entities', methods=['GET'])
+def get_ha_entities():
+    """Get Home Assistant entity configurations"""
+    if not ha_settings:
+        return jsonify({'error': 'HA settings not available'}), 500
+
+    entities = ha_settings.get_entity_configurations()
+    return jsonify({'entities': entities})
+
+
+@app.route('/api/ha/export', methods=['GET'])
+def export_ha_config():
+    """Export Home Assistant configuration"""
+    if not ha_settings:
+        return jsonify({'error': 'HA settings not available'}), 500
+
+    config = ha_settings.export_config()
+    return jsonify({'config': config})
 
 
 def generate_frames():
