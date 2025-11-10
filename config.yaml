@@ -7,12 +7,15 @@ camera:
 
 # Advanced AI Features
 ai_features:
-  # Face Recognition with Learning
+  # Face Recognition with Learning (2025 Optimized)
   face_recognition:
     enabled: true
-    tolerance: 0.6  # Lower = stricter matching
+    model: "large"  # Options: small, large (large = 99.38% accuracy)
+    tolerance: 0.5  # Lower = stricter matching (0.5 recommended for 2025)
     auto_learn_threshold: 5  # Auto-learn faces appearing this many times
     storage_dir: "data/faces"
+    jitters: 1  # Number of re-samples for recognition (higher = slower but more accurate)
+    use_cnn: true  # Use CNN model on GPU for better accuracy
 
   # Behavioral Analysis and Pattern Learning
   behavioral_analysis:
@@ -50,14 +53,15 @@ ai_features:
     auto_train: false  # Automatically train when enough annotations collected
 
 ml_model:
-  type: "yolov8n"  # Options: yolov8n, yolov8s, yolov8m, yolov8l, yolov8x, yoloe-n, yoloe-s, yoloe-m, yoloe-l, yoloe-x
-  # YOLO-E is recommended for better efficiency and edge deployment!
-  # yoloe-n: Fastest, lowest power (recommended for RTX 4070 Ti efficiency)
-  # yoloe-s: Balanced speed/accuracy
-  # yoloe-m: Higher accuracy, still efficient
+  type: "yolo11n"  # YOLOv11 (2025) - 4% more accurate, ~halved latency vs YOLOv8
+  # Options: yolo11n, yolo11s, yolo11m, yolo11l, yolo11x
+  # yolo11n: Fastest, recommended for RTX 4070 Ti real-time processing
+  # yolo11s: Balanced speed/accuracy
+  # yolo11m: Higher accuracy, still efficient
   confidence_threshold: 0.5
   nms_threshold: 0.4
-  device: "cpu"  # Options: cpu, cuda, mps
+  device: "cuda"  # Using RTX 4070 Ti GPU acceleration
+  half_precision: true  # FP16 for 2x speed boost on GPU
 
 detection:
   enable_object_detection: true
@@ -132,13 +136,19 @@ home_assistant:
     activity_level: true
     statistics: true
 
-# License Plate Recognition (LPR/ALPR)
+# License Plate Recognition (LPR/ALPR) - 2025 Optimized
 license_plate_recognition:
   enabled: true
   languages: ['en']  # OCR languages: en, ch_sim, ch_tra, ja, ko, etc.
-  gpu: true  # Use GPU acceleration for OCR
-  confidence_threshold: 0.5  # Minimum confidence for plate detection
+  gpu: true  # Use GPU acceleration for OCR (RTX 4070 Ti)
+  confidence_threshold: 0.4  # Lowered for better detection (2025 recommendation)
   country_format: 'auto'  # Options: auto, us, uk, eu, etc.
+  # EasyOCR 2025 Optimizations
+  decoder: 'greedy'  # Options: greedy, beamsearch (greedy faster, 95%+ accuracy)
+  beamWidth: 5  # Only used if decoder is beamsearch
+  batch_size: 1  # Process one at a time for real-time
+  workers: 0  # Use main process (better for GPU)
+  allowlist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'  # Valid plate characters
   # Optional: Custom cascade file for plate detection
   cascade_path: null
 

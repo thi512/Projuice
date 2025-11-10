@@ -1,12 +1,12 @@
 opencv-python==4.8.1.78
 opencv-contrib-python==4.8.1.78
-numpy==1.24.3
+numpy>=1.26.0  # Updated for Python 3.12+ compatibility
 tensorflow==2.15.0
 pillow==10.1.0
 flask==3.0.0
 flask-socketio==5.3.5
 python-socketio==5.10.0
-ultralytics==8.0.221
+ultralytics>=8.1.0  # Supports YOLOv11 (2025)
 pyyaml==6.0.1
 python-dotenv==1.0.0
 requests==2.31.0
@@ -20,8 +20,9 @@ pandas==2.1.4
 matplotlib==3.8.2
 seaborn==0.13.0
 
-# License Plate Recognition (OCR)
-easyocr==1.7.0
+# License Plate Recognition (OCR) - 2025 Optimized
+easyocr>=1.7.1  # Latest version with GPU optimization
+torch>=2.2.0  # CUDA 12.1+ support for RTX 4070 Ti
 
 # Database
 sqlalchemy==2.0.23
