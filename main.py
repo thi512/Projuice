@@ -9,7 +9,11 @@ import sys
 from threading import Thread
 
 from src.camera_system import CameraSystem
-from src.web_server import init_web_server, run_server
+from src.enhanced_web_server import init_enhanced_web_server as init_web_server, app, socketio
+
+def run_server(host='0.0.0.0', port=5000):
+    """Run the web server"""
+    socketio.run(app, host=host, port=port, debug=False, allow_unsafe_werkzeug=True)
 
 # Configure logging
 logging.basicConfig(

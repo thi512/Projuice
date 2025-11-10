@@ -345,6 +345,8 @@ logging.basicConfig(level=logging.WARNING)  # Less verbose
 Comprehensive guides for all features:
 
 - **[README.md](README.md)** - This file - System overview and quick start
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Complete system architecture for developers and AI systems
+- **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - REST API reference with all 31 endpoints
 - **[AI_FEATURES.md](AI_FEATURES.md)** - Complete AI capabilities documentation
 - **[INTERACTIVE_LEARNING.md](INTERACTIVE_LEARNING.md)** - Guide to training custom objects
 - **[CHATBOT_GUIDE.md](CHATBOT_GUIDE.md)** - Natural language query system guide

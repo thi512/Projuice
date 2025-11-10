@@ -39,3 +39,8 @@ statsmodels==0.14.1
 # Face recognition
 face-recognition==1.3.0
 dlib==19.24.2
+
+# Camera Discovery (for NVR and network camera support)
+netifaces==0.11.0
+onvif-zeep==0.2.12
+wsdiscovery==2.0.0
