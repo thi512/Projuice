@@ -66,6 +66,369 @@ class CameraDiscovery:
         self.discovered_cameras = enriched_cameras
         return enriched_cameras
 
+    def discover_nvr_cameras(self, nvr_ip: str, nvr_port: int = 80,
+                            username: str = '', password: str = '',
+                            nvr_type: str = 'auto') -> List[Dict]:
+        """
+        Discover all cameras connected to an NVR
+
+        Args:
+            nvr_ip: NVR IP address
+            nvr_port: NVR HTTP port (default 80)
+            username: Username for authentication
+            password: Password for authentication
+            nvr_type: NVR type ('auto', 'reolink', 'hikvision', 'dahua', etc.)
+
+        Returns:
+            List of cameras connected to the NVR
+        """
+        logger.info(f"Discovering cameras on NVR {nvr_ip}:{nvr_port}")
+
+        # Auto-detect NVR type if not specified
+        if nvr_type == 'auto':
+            nvr_type = self._detect_nvr_type(nvr_ip, nvr_port)
+            logger.info(f"Detected NVR type: {nvr_type}")
+
+        cameras = []
+
+        if nvr_type == 'reolink':
+            cameras = self._discover_reolink_nvr_cameras(nvr_ip, nvr_port, username, password)
+        elif nvr_type == 'hikvision':
+            cameras = self._discover_hikvision_nvr_cameras(nvr_ip, nvr_port, username, password)
+        elif nvr_type == 'dahua':
+            cameras = self._discover_dahua_nvr_cameras(nvr_ip, nvr_port, username, password)
+        else:
+            logger.warning(f"Unsupported NVR type: {nvr_type}")
+            # Try generic ONVIF discovery as fallback
+            cameras = self._discover_generic_nvr_cameras(nvr_ip, nvr_port, username, password)
+
+        logger.info(f"Found {len(cameras)} cameras on NVR")
+        return cameras
+
+    def _detect_nvr_type(self, ip: str, port: int) -> str:
+        """
+        Auto-detect NVR type
+
+        Args:
+            ip: NVR IP address
+            port: NVR port
+
+        Returns:
+            NVR type string
+        """
+        try:
+            url = f"http://{ip}:{port}"
+            response = requests.get(url, timeout=self.timeout, verify=False)
+
+            content = response.text.lower()
+            headers = {k.lower(): v for k, v in response.headers.items()}
+
+            if 'reolink' in content or 'reolink' in headers.get('server', ''):
+                return 'reolink'
+            elif 'hikvision' in content or 'hikvision' in headers.get('server', ''):
+                return 'hikvision'
+            elif 'dahua' in content:
+                return 'dahua'
+
+        except Exception as e:
+            logger.debug(f"NVR type detection failed: {e}")
+
+        return 'generic'
+
+    def _discover_reolink_nvr_cameras(self, ip: str, port: int, username: str, password: str) -> List[Dict]:
+        """
+        Discover cameras on a Reolink NVR
+
+        Args:
+            ip: NVR IP address
+            port: NVR port
+            username: Username
+            password: Password
+
+        Returns:
+            List of cameras
+        """
+        cameras = []
+
+        try:
+            # Get channel info from Reolink NVR API
+            url = f"http://{ip}:{port}/api.cgi?cmd=GetChannelStatus"
+
+            if username and password:
+                response = requests.get(url, auth=(username, password), timeout=5, verify=False)
+            else:
+                response = requests.get(url, timeout=5, verify=False)
+
+            if response.status_code == 200:
+                data = response.json()
+
+                if 'value' in data and 'ChannelStatus' in data['value']:
+                    channels = data['value']['ChannelStatus']
+
+                    for channel in channels:
+                        channel_id = channel.get('channel', 0)
+                        channel_name = channel.get('name', f'Channel {channel_id}')
+                        online = channel.get('online', 0) == 1
+
+                        if online:
+                            # Generate RTSP URLs for this channel
+                            camera = {
+                                'ip': ip,
+                                'port': 554,
+                                'protocol': 'reolink_nvr',
+                                'nvr_ip': ip,
+                                'nvr_port': port,
+                                'channel': channel_id,
+                                'name': f"{channel_name} (NVR {ip} Ch{channel_id})",
+                                'manufacturer': 'Reolink',
+                                'model': 'NVR Channel',
+                                'online': online,
+                                'rtsp_urls': [
+                                    {
+                                        'name': 'Main Stream',
+                                        'url': f"rtsp://{ip}:554/h264Preview_{channel_id:02d}_main",
+                                        'quality': 'high'
+                                    },
+                                    {
+                                        'name': 'Sub Stream',
+                                        'url': f"rtsp://{ip}:554/h264Preview_{channel_id:02d}_sub",
+                                        'quality': 'low'
+                                    }
+                                ],
+                                'capabilities': {
+                                    'rtsp': True,
+                                    'nvr_channel': True
+                                }
+                            }
+                            cameras.append(camera)
+
+            # Also try to get device info
+            url = f"http://{ip}:{port}/api.cgi?cmd=GetDevInfo"
+            if username and password:
+                response = requests.get(url, auth=(username, password), timeout=5, verify=False)
+            else:
+                response = requests.get(url, timeout=5, verify=False)
+
+            if response.status_code == 200:
+                dev_info = response.json()
+                if 'value' in dev_info and 'DevInfo' in dev_info['value']:
+                    nvr_model = dev_info['value']['DevInfo'].get('model', 'NVR')
+                    # Update camera info with NVR model
+                    for camera in cameras:
+                        camera['nvr_model'] = nvr_model
+
+        except Exception as e:
+            logger.error(f"Failed to discover Reolink NVR cameras: {e}")
+
+        return cameras
+
+    def _discover_hikvision_nvr_cameras(self, ip: str, port: int, username: str, password: str) -> List[Dict]:
+        """
+        Discover cameras on a Hikvision NVR
+
+        Args:
+            ip: NVR IP address
+            port: NVR port
+            username: Username
+            password: Password
+
+        Returns:
+            List of cameras
+        """
+        cameras = []
+
+        try:
+            # Hikvision uses ISAPI
+            url = f"http://{ip}:{port}/ISAPI/System/Video/inputs/channels"
+
+            if username and password:
+                response = requests.get(url, auth=(username, password), timeout=5, verify=False)
+            else:
+                response = requests.get(url, timeout=5, verify=False)
+
+            if response.status_code == 200:
+                # Parse XML response
+                root = ET.fromstring(response.content)
+
+                for video_input in root.findall('.//VideoInputChannel'):
+                    channel_id = video_input.find('id')
+                    channel_name = video_input.find('name')
+
+                    if channel_id is not None:
+                        ch_id = int(channel_id.text)
+                        ch_name = channel_name.text if channel_name is not None else f'Channel {ch_id}'
+
+                        camera = {
+                            'ip': ip,
+                            'port': 554,
+                            'protocol': 'hikvision_nvr',
+                            'nvr_ip': ip,
+                            'nvr_port': port,
+                            'channel': ch_id,
+                            'name': f"{ch_name} (Hikvision NVR {ip} Ch{ch_id})",
+                            'manufacturer': 'Hikvision',
+                            'model': 'NVR Channel',
+                            'rtsp_urls': [
+                                {
+                                    'name': 'Main Stream',
+                                    'url': f"rtsp://{ip}:554/Streaming/Channels/{ch_id}01",
+                                    'quality': 'high'
+                                },
+                                {
+                                    'name': 'Sub Stream',
+                                    'url': f"rtsp://{ip}:554/Streaming/Channels/{ch_id}02",
+                                    'quality': 'low'
+                                }
+                            ],
+                            'capabilities': {
+                                'rtsp': True,
+                                'nvr_channel': True
+                            }
+                        }
+                        cameras.append(camera)
+
+        except Exception as e:
+            logger.error(f"Failed to discover Hikvision NVR cameras: {e}")
+
+        return cameras
+
+    def _discover_dahua_nvr_cameras(self, ip: str, port: int, username: str, password: str) -> List[Dict]:
+        """
+        Discover cameras on a Dahua NVR
+
+        Args:
+            ip: NVR IP address
+            port: NVR port
+            username: Username
+            password: Password
+
+        Returns:
+            List of cameras
+        """
+        cameras = []
+
+        try:
+            # Dahua uses CGI API
+            # Try to get channel count
+            url = f"http://{ip}:{port}/cgi-bin/magicBox.cgi?action=getProductDefinition"
+
+            if username and password:
+                response = requests.get(url, auth=(username, password), timeout=5, verify=False)
+            else:
+                response = requests.get(url, timeout=5, verify=False)
+
+            if response.status_code == 200:
+                content = response.text
+
+                # Parse channel count
+                channel_count = 16  # Default assumption
+                match = re.search(r'VideoInChannel=(\d+)', content)
+                if match:
+                    channel_count = int(match.group(1))
+
+                # Create cameras for each channel
+                for ch_id in range(1, channel_count + 1):
+                    camera = {
+                        'ip': ip,
+                        'port': 554,
+                        'protocol': 'dahua_nvr',
+                        'nvr_ip': ip,
+                        'nvr_port': port,
+                        'channel': ch_id,
+                        'name': f"Channel {ch_id} (Dahua NVR {ip})",
+                        'manufacturer': 'Dahua',
+                        'model': 'NVR Channel',
+                        'rtsp_urls': [
+                            {
+                                'name': 'Main Stream',
+                                'url': f"rtsp://{ip}:554/cam/realmonitor?channel={ch_id}&subtype=0",
+                                'quality': 'high'
+                            },
+                            {
+                                'name': 'Sub Stream',
+                                'url': f"rtsp://{ip}:554/cam/realmonitor?channel={ch_id}&subtype=1",
+                                'quality': 'low'
+                            }
+                        ],
+                        'capabilities': {
+                            'rtsp': True,
+                            'nvr_channel': True
+                        }
+                    }
+                    cameras.append(camera)
+
+        except Exception as e:
+            logger.error(f"Failed to discover Dahua NVR cameras: {e}")
+
+        return cameras
+
+    def _discover_generic_nvr_cameras(self, ip: str, port: int, username: str, password: str) -> List[Dict]:
+        """
+        Try to discover cameras on a generic NVR using ONVIF
+
+        Args:
+            ip: NVR IP address
+            port: NVR port
+            username: Username
+            password: Password
+
+        Returns:
+            List of cameras
+        """
+        cameras = []
+
+        try:
+            # Try ONVIF for generic NVRs
+            from onvif import ONVIFCamera
+
+            mycam = ONVIFCamera(ip, port, username, password)
+
+            # Get media service
+            media_service = mycam.create_media_service()
+            profiles = media_service.GetProfiles()
+
+            for idx, profile in enumerate(profiles):
+                camera = {
+                    'ip': ip,
+                    'port': 554,
+                    'protocol': 'onvif_nvr',
+                    'nvr_ip': ip,
+                    'nvr_port': port,
+                    'channel': idx + 1,
+                    'name': f"ONVIF Profile {idx + 1} (NVR {ip})",
+                    'manufacturer': 'Generic',
+                    'model': 'NVR Channel',
+                    'profile_token': profile.token,
+                    'capabilities': {
+                        'onvif': True,
+                        'nvr_channel': True
+                    }
+                }
+
+                # Try to get stream URI
+                try:
+                    stream_uri = media_service.GetStreamUri({
+                        'StreamSetup': {'Stream': 'RTP-Unicast', 'Transport': {'Protocol': 'RTSP'}},
+                        'ProfileToken': profile.token
+                    })
+
+                    if stream_uri and hasattr(stream_uri, 'Uri'):
+                        camera['rtsp_urls'] = [
+                            {'name': f'Profile {idx + 1}', 'url': stream_uri.Uri, 'quality': 'high'}
+                        ]
+
+                except Exception as e:
+                    logger.debug(f"Failed to get stream URI: {e}")
+
+                cameras.append(camera)
+
+        except ImportError:
+            logger.warning("python-onvif-zeep not installed, cannot use ONVIF for generic NVR")
+        except Exception as e:
+            logger.error(f"Failed to discover generic NVR cameras: {e}")
+
+        return cameras
+
     def _discover_onvif(self) -> List[Dict]:
         """
         Discover ONVIF cameras using WS-Discovery

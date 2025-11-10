@@ -514,6 +514,40 @@ def discover_cameras():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+@app.route('/api/cameras/discover/nvr', methods=['POST'])
+def discover_nvr_cameras():
+    """Discover all cameras connected to an NVR"""
+    if not camera_discovery:
+        return jsonify({'error': 'Camera discovery not available'}), 500
+
+    try:
+        data = request.json or {}
+        nvr_ip = data.get('nvr_ip')
+        nvr_port = data.get('nvr_port', 80)
+        username = data.get('username', '')
+        password = data.get('password', '')
+        nvr_type = data.get('nvr_type', 'auto')
+
+        if not nvr_ip:
+            return jsonify({'success': False, 'message': 'NVR IP required'}), 400
+
+        cameras = camera_discovery.discover_nvr_cameras(
+            nvr_ip, nvr_port, username, password, nvr_type
+        )
+
+        return jsonify({
+            'success': True,
+            'cameras': cameras,
+            'count': len(cameras),
+            'nvr_ip': nvr_ip,
+            'nvr_type': nvr_type if nvr_type != 'auto' else 'detected'
+        })
+
+    except Exception as e:
+        logger.error(f"NVR discovery failed: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @app.route('/api/cameras/interfaces', methods=['GET'])
 def get_network_interfaces():
     """Get network interfaces for scanning"""
