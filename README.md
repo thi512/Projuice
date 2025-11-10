@@ -36,6 +36,14 @@ A powerful, **self-learning** AI-powered home surveillance system with advanced 
   - ONVIF protocol support
   - Network scanning (RTSP, HTTP)
   - Manufacturer detection (Reolink, Hikvision, Dahua, Axis, etc.)
+- **🆕 NVR Support** - **Connect to NVR and get all cameras automatically!**
+  - **Reolink NVR** (Full support with channel names & online status)
+  - **Hikvision NVR** (ISAPI protocol support)
+  - **Dahua NVR** (CGI API support)
+  - **Generic ONVIF NVR** (Works with any ONVIF-compliant NVR)
+  - Auto-detects NVR type
+  - Discovers all channels/cameras
+  - Generates correct RTSP URLs
 - **🆕 Multi-Camera Support** - Manage unlimited cameras from one interface
 - **🆕 Homepage Selection** - Choose which cameras appear on main dashboard
 - **🆕 Per-Camera Settings** - Rotation, flip, resolution, quality, detection zones
