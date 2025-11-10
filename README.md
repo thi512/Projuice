@@ -31,9 +31,31 @@ A powerful, **self-learning** AI-powered home surveillance system with advanced 
 - **Comprehensive Dashboard** - Beautiful graphs, charts, and real-time insights
 - **Historical Database** - Stores all data for long-term trend analysis
 
+### 🎥 **NEW: Professional Camera Management**
+- **🆕 Auto-Discovery** - One-click discovery of all cameras on your network
+  - ONVIF protocol support
+  - Network scanning (RTSP, HTTP)
+  - Manufacturer detection (Reolink, Hikvision, Dahua, Axis, etc.)
+- **🆕 Multi-Camera Support** - Manage unlimited cameras from one interface
+- **🆕 Homepage Selection** - Choose which cameras appear on main dashboard
+- **🆕 Per-Camera Settings** - Rotation, flip, resolution, quality, detection zones
+- **🆕 Connection Testing** - Test cameras before adding
+- **🆕 Persistent Storage** - Settings survive restarts
+
+### 👤 **NEW: Smart Entity Labeling**
+- **🆕 Face Labeling** - Name frequent visitors automatically detected
+- **🆕 Vehicle Labeling** - Label regular vehicles by license plate
+- **🆕 Auto-Suggestions** - System suggests unlabeled faces/vehicles
+- **🆕 Appearance Tracking** - Full history of when entities were seen
+- **🆕 Database Integration** - All labels stored and searchable
+
 ### 🏡 Smart Home Integration
 - **Reolink NVR/Camera Support** - Native integration with your Reolink cameras
-- **Home Assistant MQTT** - Auto-discovered sensors and automation triggers
+- **🆕 Home Assistant MQTT Settings** - Full configuration via web interface
+  - MQTT broker configuration
+  - Entity publishing controls
+  - Auto-discovery support
+  - Connection testing
 - **Real-Time Notifications** - Push alerts for anomalies and events
 
 See **[AI_FEATURES.md](AI_FEATURES.md)** for complete documentation of all AI capabilities!
